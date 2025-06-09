@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Flowchart & Mindmap Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --background-color: #f8f9fa;
+            --primary-color: #4262ff;
+            --node-bg: #ffffff;
+            --node-border: #dfe1e6;
+            --text-color: #172b4d;
+            --connector-color: #8a94a6;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Nunito', sans-serif;
+            overflow: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .toolbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--node-bg);
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            z-index: 1001;
+            display: flex;
+            gap: 8px;
+        }
+
+        .toolbar-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .toolbar-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-color);
+            pointer-events: none; /* Make sure button receives the click */
+        }
+
+        .toolbar-btn:hover {
+            background-color: #f1f2f4;
+        }
+
+        .toolbar-btn.active {
+            background-color: #e9eefe;
+        }
+        .toolbar-btn.active svg {
+            stroke: var(--primary-color);
+        }
+
+        .toolbar-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+        }
+        .toolbar-btn:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+
+        #board {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            cursor: default;
+        }
+        
+        #connector-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .node {
+            position: absolute;
+            z-index: 10;
+            background-color: var(--node-bg);
+            border: 1px solid var(--node-border);
+            box-shadow: var(--shadow);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            user-select: none;
+            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        }
+        .node:hover {
+            border-color: var(--primary-color);
+        }
+        .node.selected {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .node.shape-rectangle { width: 150px; height: 80px; border-radius: 8px; }
+        .node.shape-diamond { width: 120px; height: 120px; transform: rotate(45deg); border-radius: 8px; }
+        .node.shape-diamond .content { transform: rotate(-45deg); }
+        .node.mindmap-node { width: 130px; height: 60px; border-radius: 30px; background-color: #e6f7ff; border-color: #91d5ff; }
+
+        .content {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-size: 15px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            outline: none;
+        }
+
+        .connector-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 50%;
+            cursor: crosshair;
+            z-index: 11;
+            visibility: hidden;
+            transform: scale(0.8);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+        .node:hover .connector-dot, .node.selected .connector-dot { visibility: visible; }
+        .connector-dot:hover { transform: scale(1.2); background-color: var(--primary-color); }
+        .dot-top { top: -8px; left: 50%; transform: translateX(-50%) scale(0.8); }
+        .dot-bottom { bottom: -8px; left: 50%; transform: translateX(-50%) scale(0.8); }
+        .dot-left { left: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
+        .dot-right { right: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button class="toolbar-btn" id="addRectangleBtn" data-tooltip="Rectangle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+        </button>
+        <button class="toolbar-btn" id="addDiamondBtn" data-tooltip="Diamond">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 12l10 10 10-10L12 2z"></path></svg>
+        </button>
+        <button class="toolbar-btn" id="addMindmapBtn" data-tooltip="Mindmap Node">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse></svg>
+        </button>
+    </div>
+
+    <div id="board">
+        <svg id="connector-canvas"></svg>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const board = document.getElementById('board');
+            const svgCanvas = document.getElementById('connector-canvas');
+            const buttons = {
+                addRectangle: { btn: document.getElementById('addRectangleBtn'), mode: 'add-rectangle' },
+                addDiamond:   { btn: document.getElementById('addDiamondBtn'),   mode: 'add-diamond' },
+                addMindmap:   { btn: document.getElementById('addMindmapBtn'),   mode: 'add-mindmap' },
+            };
+
+            let activeMode = null, nodeIdCounter = 0, selectedNodeId = null;
+            let nodes = {}, connections = [];
+
+            // --- Mode & Selection ---
+            const setMode = (newMode) => {
+                deselectAllNodes();
+                // Toggle mode: if the same button is clicked again, turn it off.
+                activeMode = (activeMode === newMode) ? null : newMode;
+                board.style.cursor = activeMode ? 'crosshair' : 'default';
+                
+                // Update button styles
+                Object.values(buttons).forEach(item => {
+                    item.btn.classList.toggle('active', item.mode === activeMode);
+                });
+            };
+            
+            Object.values(buttons).forEach(item => {
+                item.btn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent the click from reaching the board
+                    setMode(item.mode);
+                });
+            });
+
+            const selectNode = (nodeId) => {
+                if (selectedNodeId === nodeId) return; // Already selected
+                deselectAllNodes();
+                selectedNodeId = nodeId;
+                if (nodeId) {
+                    nodes[nodeId].el.classList.add('selected');
+                }
+            };
+            
+            const deselectAllNodes = () => {
+                if(selectedNodeId && nodes[selectedNodeId]) {
+                    nodes[selectedNodeId].el.classList.remove('selected');
+                }
+                selectedNodeId = null;
+            };
+
+            board.addEventListener('click', (e) => {
+                // If a mode is active, create a node.
+                if (activeMode) {
+                    createNode(activeMode, e.clientX, e.clientY);
+                    setMode(null); // Deactivate mode after creating one node
+                } else if (e.target.id === 'board') {
+                    // If no mode is active and click is on the board, deselect everything.
+                    deselectAllNodes();
+                }
+            });
+            
+            // --- Deletion ---
+            window.addEventListener('keydown', (e) => {
+                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId) {
+                    e.preventDefault();
+                    deleteNode(selectedNodeId);
+                }
+            });
+
+            function deleteNode(nodeId) {
+                connections = connections.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
+                nodes[nodeId].el.remove();
+                delete nodes[nodeId];
+                selectedNodeId = null;
+                drawAllConnections();
+            }
+
+            // --- Node Creation ---
+            function createNode(type, x, y) {
+                const nodeId = `node-${nodeIdCounter++}`;
+                const node = document.createElement('div');
+                node.id = nodeId;
+                node.className = 'node';
+                
+                let contentText, shapeClass, width = 150, height = 80;
+                
+                if (type === 'add-rectangle') { shapeClass = 'shape-rectangle'; contentText = "Process"; } 
+                else if (type === 'add-diamond') { shapeClass = 'shape-diamond'; contentText = "Decision"; width=120; height=120; } 
+                else if (type === 'add-mindmap') { shapeClass = 'mindmap-node'; contentText = "Idea"; width=130; height=60; }
+                
+                node.classList.add(shapeClass);
+                node.style.left = `${x - width / 2}px`;
+                node.style.top = `${y - height / 2}px`;
+
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.textContent = contentText;
+                node.appendChild(content);
+
+                node.addEventListener('dblclick', () => { content.contentEditable = true; content.focus(); });
+                content.addEventListener('blur', () => { content.contentEditable = false; });
+                content.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); content.blur(); }});
+                
+                ['top', 'bottom', 'left', 'right'].forEach(pos => {
+                    const dot = document.createElement('div');
+                    dot.className = `connector-dot dot-${pos}`;
+                    dot.addEventListener('mousedown', (e) => startConnecting(e, nodeId));
+                    node.appendChild(dot);
+                });
+                
+                board.appendChild(node);
+                nodes[nodeId] = { el: node, x, y };
+                node.addEventListener('mousedown', startDrag);
+                selectNode(nodeId);
+            }
+
+            // --- Drag and Drop ---
+            let activeDraggable, offsetX, offsetY;
+            function startDrag(e) {
+                if (e.target.classList.contains('connector-dot') || e.target.contentEditable === 'true') return;
+                e.preventDefault();
+                activeDraggable = e.currentTarget;
+                const rect = activeDraggable.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                selectNode(activeDraggable.id);
+                window.addEventListener('mousemove', drag);
+                window.addEventListener('mouseup', stopDrag);
+            }
+            function drag(e) {
+                if (!activeDraggable) return;
+                activeDraggable.style.left = `${e.clientX - offsetX}px`;
+                activeDraggable.style.top = `${e.clientY - offsetY}px`;
+                updateConnectionsForNode(activeDraggable.id);
+            }
+            function stopDrag() {
+                window.removeEventListener('mousemove', drag);
+                window.removeEventListener('mouseup', stopDrag);
+            }
+
+            // --- Connection Logic ---
+            let isConnecting, startNodeId, tempLine;
+            function startConnecting(e, nodeId) {
+                e.stopPropagation();
+                isConnecting = true;
+                startNodeId = nodeId;
+                tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tempLine.setAttribute('stroke', 'var(--primary-color)');
+                tempLine.setAttribute('stroke-width', '2');
+                tempLine.setAttribute('stroke-dasharray', '6,4');
+                svgCanvas.appendChild(tempLine);
+                const startPos = getCenter(nodes[startNodeId].el);
+                tempLine.setAttribute('x1', startPos.x);
+                tempLine.setAttribute('y1', startPos.y);
+                window.addEventListener('mousemove', drawTempConnection);
+                window.addEventListener('mouseup', endConnecting);
+            }
+            function drawTempConnection(e) {
+                if (!isConnecting) return;
+                tempLine.setAttribute('x2', e.clientX);
+                tempLine.setAttribute('y2', e.clientY);
+            }
+            function endConnecting(e) {
+                if (isConnecting) {
+                    tempLine.remove();
+                    const endTarget = document.elementFromPoint(e.clientX, e.clientY);
+                    if (endTarget && endTarget.classList.contains('connector-dot')) {
+                        const parentNode = endTarget.closest('.node');
+                        if (parentNode && parentNode.id !== startNodeId) {
+                            connections.push({ from: startNodeId, to: parentNode.id });
+                            drawAllConnections();
+                        }
+                    }
+                }
+                isConnecting = false;
+                window.removeEventListener('mousemove', drawTempConnection);
+                window.removeEventListener('mouseup', endConnecting);
+            }
+
+            // --- Drawing ---
+            function drawAllConnections() {
+                svgCanvas.innerHTML = '';
+                connections.forEach(conn => {
+                    const fromNode = nodes[conn.from]?.el;
+                    const toNode = nodes[conn.to]?.el;
+                    if (fromNode && toNode) {
+                        const startPos = getCenter(fromNode);
+                        const endPos = getCenter(toNode);
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', startPos.x);
+                        line.setAttribute('y1', startPos.y);
+                        line.setAttribute('x2', endPos.x);
+                        line.setAttribute('y2', endPos.y);
+                        line.setAttribute('stroke', 'var(--connector-color)');
+                        line.setAttribute('stroke-width', '2.5');
+                        line.dataset.from = conn.from;
+                        line.dataset.to = conn.to;
+                        svgCanvas.appendChild(line);
+                    }
+                });
+            }
+            function updateConnectionsForNode(nodeId) {
+                const nodeCenter = getCenter(nodes[nodeId].el);
+                svgCanvas.querySelectorAll('line').forEach(line => {
+                    if (line.dataset.from === nodeId) {
+                        line.setAttribute('x1', nodeCenter.x);
+                        line.setAttribute('y1', nodeCenter.y);
+                    }
+                    if (line.dataset.to === nodeId) {
+                        line.setAttribute('x2', nodeCenter.x);
+                        line.setAttribute('y2', nodeCenter.y);
+                    }
+                });
+            }
+            function getCenter(element) {
+                const rect = element.getBoundingClientRect();
+                return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            }
+        });
+    </script>
+</body>
+</html>
