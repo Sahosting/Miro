@@ -42,6 +42,7 @@
             z-index: 1001;
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
         .toolbar-btn {
@@ -76,7 +77,7 @@
             stroke: var(--primary-color);
         }
 
-        .toolbar-btn::after {
+        .toolbar-btn::after, .color-picker-container::after {
             content: attr(data-tooltip);
             position: absolute;
             bottom: -30px;
@@ -93,9 +94,36 @@
             transition: opacity 0.2s ease, visibility 0.2s ease;
             pointer-events: none;
         }
-        .toolbar-btn:hover::after {
+        .toolbar-btn:hover::after, .color-picker-container:hover::after {
             opacity: 1;
             visibility: visible;
+        }
+
+        .color-picker-container {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #nodeColorPicker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        #nodeColorPicker::-webkit-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #dfe1e6;
+        }
+        #nodeColorPicker::-moz-color-swatch {
+            border-radius: 50%;
+            border: 2px solid #dfe1e6;
         }
 
 
@@ -129,7 +157,7 @@
             padding: 10px;
             box-sizing: border-box;
             user-select: none;
-            transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+            transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
         .node:hover {
             border-color: var(--primary-color);
@@ -137,12 +165,13 @@
         .node.selected {
             outline: 2px solid var(--primary-color);
             outline-offset: 2px;
+            border-color: var(--primary-color);
         }
 
-        .node.shape-rectangle { width: 150px; height: 80px; border-radius: 8px; }
-        .node.shape-diamond { width: 120px; height: 120px; transform: rotate(45deg); border-radius: 8px; }
+        .node.shape-rectangle { min-width: 150px; min-height: 80px; width: 150px; height: 80px; border-radius: 8px; }
+        .node.shape-diamond { min-width: 120px; min-height: 120px; width: 120px; height: 120px; transform: rotate(45deg); border-radius: 8px; }
         .node.shape-diamond .content { transform: rotate(-45deg); }
-        .node.mindmap-node { width: 130px; height: 60px; border-radius: 30px; background-color: #e6f7ff; border-color: #91d5ff; }
+        .node.mindmap-node { min-width: 130px; min-height: 60px; width: 130px; height: 60px; border-radius: 30px; background-color: #e6f7ff; border-color: #91d5ff; }
 
         .content {
             width: 100%;
@@ -175,6 +204,23 @@
         .dot-bottom { bottom: -8px; left: 50%; transform: translateX(-50%) scale(0.8); }
         .dot-left { left: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
         .dot-right { right: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
+
+        .resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: var(--primary-color);
+            border: 2px solid white;
+            bottom: -7px;
+            right: -7px;
+            cursor: nwse-resize;
+            z-index: 12;
+            display: none; /* Hidden by default */
+        }
+        .node.selected .resize-handle {
+            display: block; /* Visible only when node is selected */
+        }
+
     </style>
 </head>
 <body>
@@ -189,6 +235,9 @@
         <button class="toolbar-btn" id="addMindmapBtn" data-tooltip="Mindmap Node">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse></svg>
         </button>
+        <div class="color-picker-container" data-tooltip="Node Color">
+            <input type="color" id="nodeColorPicker" value="#ffffff">
+        </div>
     </div>
 
     <div id="board">
@@ -199,6 +248,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const board = document.getElementById('board');
             const svgCanvas = document.getElementById('connector-canvas');
+            const nodeColorPicker = document.getElementById('nodeColorPicker');
             const buttons = {
                 addRectangle: { btn: document.getElementById('addRectangleBtn'), mode: 'add-rectangle' },
                 addDiamond:   { btn: document.getElementById('addDiamondBtn'),   mode: 'add-diamond' },
@@ -211,11 +261,9 @@
             // --- Mode & Selection ---
             const setMode = (newMode) => {
                 deselectAllNodes();
-                // Toggle mode: if the same button is clicked again, turn it off.
                 activeMode = (activeMode === newMode) ? null : newMode;
                 board.style.cursor = activeMode ? 'crosshair' : 'default';
                 
-                // Update button styles
                 Object.values(buttons).forEach(item => {
                     item.btn.classList.toggle('active', item.mode === activeMode);
                 });
@@ -223,17 +271,22 @@
             
             Object.values(buttons).forEach(item => {
                 item.btn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent the click from reaching the board
+                    e.stopPropagation();
                     setMode(item.mode);
                 });
             });
 
             const selectNode = (nodeId) => {
-                if (selectedNodeId === nodeId) return; // Already selected
+                if (selectedNodeId === nodeId) return;
                 deselectAllNodes();
                 selectedNodeId = nodeId;
                 if (nodeId) {
-                    nodes[nodeId].el.classList.add('selected');
+                    const nodeEl = nodes[nodeId].el;
+                    nodeEl.classList.add('selected');
+                    
+                    // Update color picker with selected node's color
+                    const currentColor = window.getComputedStyle(nodeEl).backgroundColor;
+                    nodeColorPicker.value = rgbToHex(currentColor);
                 }
             };
             
@@ -245,12 +298,10 @@
             };
 
             board.addEventListener('click', (e) => {
-                // If a mode is active, create a node.
                 if (activeMode) {
                     createNode(activeMode, e.clientX, e.clientY);
-                    setMode(null); // Deactivate mode after creating one node
+                    setMode(null);
                 } else if (e.target.id === 'board') {
-                    // If no mode is active and click is on the board, deselect everything.
                     deselectAllNodes();
                 }
             });
@@ -258,8 +309,10 @@
             // --- Deletion ---
             window.addEventListener('keydown', (e) => {
                 if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId) {
-                    e.preventDefault();
-                    deleteNode(selectedNodeId);
+                    if (document.activeElement.contentEditable !== 'true') {
+                       e.preventDefault();
+                       deleteNode(selectedNodeId);
+                    }
                 }
             });
 
@@ -278,15 +331,16 @@
                 node.id = nodeId;
                 node.className = 'node';
                 
-                let contentText, shapeClass, width = 150, height = 80;
+                let contentText, shapeClass;
                 
                 if (type === 'add-rectangle') { shapeClass = 'shape-rectangle'; contentText = "Process"; } 
-                else if (type === 'add-diamond') { shapeClass = 'shape-diamond'; contentText = "Decision"; width=120; height=120; } 
-                else if (type === 'add-mindmap') { shapeClass = 'mindmap-node'; contentText = "Idea"; width=130; height=60; }
+                else if (type === 'add-diamond') { shapeClass = 'shape-diamond'; contentText = "Decision";} 
+                else if (type === 'add-mindmap') { shapeClass = 'mindmap-node'; contentText = "Idea"; }
                 
                 node.classList.add(shapeClass);
-                node.style.left = `${x - width / 2}px`;
-                node.style.top = `${y - height / 2}px`;
+                let rect = node.getBoundingClientRect();
+                node.style.left = `${x - rect.width / 2}px`;
+                node.style.top = `${y - rect.height / 2}px`;
 
                 const content = document.createElement('div');
                 content.className = 'content';
@@ -303,9 +357,15 @@
                     dot.addEventListener('mousedown', (e) => startConnecting(e, nodeId));
                     node.appendChild(dot);
                 });
+
+                // Add resize handle
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'resize-handle';
+                resizeHandle.addEventListener('mousedown', startResize);
+                node.appendChild(resizeHandle);
                 
                 board.appendChild(node);
-                nodes[nodeId] = { el: node, x, y };
+                nodes[nodeId] = { el: node };
                 node.addEventListener('mousedown', startDrag);
                 selectNode(nodeId);
             }
@@ -313,7 +373,9 @@
             // --- Drag and Drop ---
             let activeDraggable, offsetX, offsetY;
             function startDrag(e) {
-                if (e.target.classList.contains('connector-dot') || e.target.contentEditable === 'true') return;
+                if (e.target.classList.contains('connector-dot') || 
+                    e.target.classList.contains('resize-handle') || 
+                    e.target.contentEditable === 'true') return;
                 e.preventDefault();
                 activeDraggable = e.currentTarget;
                 const rect = activeDraggable.getBoundingClientRect();
@@ -332,6 +394,40 @@
             function stopDrag() {
                 window.removeEventListener('mousemove', drag);
                 window.removeEventListener('mouseup', stopDrag);
+                activeDraggable = null;
+            }
+
+            // --- Resizing Logic ---
+            let activeResizable, initialWidth, initialHeight, initialMouseX, initialMouseY;
+            function startResize(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                activeResizable = e.target.closest('.node');
+                const rect = activeResizable.getBoundingClientRect();
+                initialWidth = rect.width;
+                initialHeight = rect.height;
+                initialMouseX = e.clientX;
+                initialMouseY = e.clientY;
+                window.addEventListener('mousemove', resizeNode);
+                window.addEventListener('mouseup', stopResize);
+            }
+            function resizeNode(e) {
+                if (!activeResizable) return;
+                const dx = e.clientX - initialMouseX;
+                const dy = e.clientY - initialMouseY;
+                const newWidth = initialWidth + dx;
+                const newHeight = initialHeight + dy;
+                const minWidth = parseInt(window.getComputedStyle(activeResizable).minWidth, 10) || 50;
+                const minHeight = parseInt(window.getComputedStyle(activeResizable).minHeight, 10) || 30;
+
+                activeResizable.style.width = `${Math.max(minWidth, newWidth)}px`;
+                activeResizable.style.height = `${Math.max(minHeight, newHeight)}px`;
+                updateConnectionsForNode(activeResizable.id);
+            }
+            function stopResize() {
+                window.removeEventListener('mousemove', resizeNode);
+                window.removeEventListener('mouseup', stopResize);
+                activeResizable = null;
             }
 
             // --- Connection Logic ---
@@ -363,14 +459,36 @@
                     if (endTarget && endTarget.classList.contains('connector-dot')) {
                         const parentNode = endTarget.closest('.node');
                         if (parentNode && parentNode.id !== startNodeId) {
-                            connections.push({ from: startNodeId, to: parentNode.id });
-                            drawAllConnections();
+                            // Prevent duplicate connections
+                            const exists = connections.some(conn => (conn.from === startNodeId && conn.to === parentNode.id) || (conn.from === parentNode.id && conn.to === startNodeId));
+                            if (!exists) {
+                                connections.push({ from: startNodeId, to: parentNode.id });
+                                drawAllConnections();
+                            }
                         }
                     }
                 }
                 isConnecting = false;
                 window.removeEventListener('mousemove', drawTempConnection);
                 window.removeEventListener('mouseup', endConnecting);
+            }
+
+            // --- Color Picker Logic ---
+            nodeColorPicker.addEventListener('input', (e) => {
+                if (selectedNodeId) {
+                    nodes[selectedNodeId].el.style.backgroundColor = e.target.value;
+                }
+            });
+            function rgbToHex(rgb) {
+                let sep = rgb.indexOf(",") > -1 ? "," : " ";
+                rgb = rgb.substr(4).split(")")[0].split(sep);
+                let r = (+rgb[0]).toString(16),
+                    g = (+rgb[1]).toString(16),
+                    b = (+rgb[2]).toString(16);
+                if (r.length == 1) r = "0" + r;
+                if (g.length == 1) g = "0" + g;
+                if (b.length == 1) b = "0" + b;
+                return "#" + r + g + b;
             }
 
             // --- Drawing ---
