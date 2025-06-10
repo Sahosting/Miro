@@ -17,6 +17,8 @@
             --text-color: #172b4d;
             --connector-color: #8a94a6;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+            --page-tab-bg: #e9ecef;
+            --page-tab-active-bg: #ffffff;
         }
 
         body, html {
@@ -30,6 +32,33 @@
             color: var(--text-color);
         }
 
+        .main-container {
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* This container will handle the viewport */
+            cursor: grab;
+        }
+        .main-container.panning {
+            cursor: grabbing;
+        }
+
+        #board {
+            position: relative;
+            transform-origin: 0 0; /* Important for zooming */
+            width: 100%; /* The logical size */
+            height: 100%;
+        }
+        
+        #connector-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
         .toolbar {
             position: fixed;
             top: 20px;
@@ -44,6 +73,13 @@
             gap: 8px;
             align-items: center;
         }
+        
+        .toolbar-separator {
+            width: 1px;
+            height: 25px;
+            background-color: #dfe1e6;
+            margin: 0 4px;
+        }
 
         .toolbar-btn {
             position: relative;
@@ -56,18 +92,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, opacity 0.2s;
         }
 
         .toolbar-btn svg {
             width: 24px;
             height: 24px;
             stroke: var(--text-color);
-            pointer-events: none; /* Make sure button receives the click */
+            pointer-events: none;
         }
 
-        .toolbar-btn:hover {
+        .toolbar-btn:hover:not(:disabled) {
             background-color: #f1f2f4;
+        }
+        
+        .toolbar-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
         }
 
         .toolbar-btn.active {
@@ -76,7 +117,6 @@
         .toolbar-btn.active svg {
             stroke: var(--primary-color);
         }
-
         .toolbar-btn::after, .color-picker-container::after {
             content: attr(data-tooltip);
             position: absolute;
@@ -108,63 +148,23 @@
             justify-content: center;
         }
         #nodeColorPicker {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            width: 28px;
-            height: 28px;
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            width: 28px; height: 28px; background-color: transparent;
+            border: none; cursor: pointer;
         }
-        #nodeColorPicker::-webkit-color-swatch {
-            border-radius: 50%;
-            border: 2px solid #dfe1e6;
-        }
-        #nodeColorPicker::-moz-color-swatch {
-            border-radius: 50%;
-            border: 2px solid #dfe1e6;
-        }
-
-
-        #board {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            cursor: default;
-        }
+        #nodeColorPicker::-webkit-color-swatch { border-radius: 50%; border: 2px solid #dfe1e6; }
+        #nodeColorPicker::-moz-color-swatch { border-radius: 50%; border: 2px solid #dfe1e6; }
         
-        #connector-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
         .node {
-            position: absolute;
-            z-index: 10;
-            background-color: var(--node-bg);
-            border: 1px solid var(--node-border);
-            box-shadow: var(--shadow);
-            cursor: move;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            box-sizing: border-box;
-            user-select: none;
+            position: absolute; z-index: 10; background-color: var(--node-bg);
+            border: 1px solid var(--node-border); box-shadow: var(--shadow);
+            cursor: move; display: flex; align-items: center; justify-content: center;
+            padding: 10px; box-sizing: border-box; user-select: none;
             transition: box-shadow 0.2s ease, border-color 0.2s ease;
         }
-        .node:hover {
-            border-color: var(--primary-color);
-        }
+        .node:hover { border-color: var(--primary-color); }
         .node.selected {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
+            outline: 2px solid var(--primary-color); outline-offset: 2px;
             border-color: var(--primary-color);
         }
 
@@ -174,28 +174,16 @@
         .node.mindmap-node { min-width: 130px; min-height: 60px; width: 130px; height: 60px; border-radius: 30px; background-color: #e6f7ff; border-color: #91d5ff; }
 
         .content {
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            font-size: 15px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            outline: none;
+            width: 100%; height: 100%; text-align: center;
+            font-size: 15px; overflow: hidden; display: flex;
+            align-items: center; justify-content: center; outline: none;
         }
 
         .connector-dot {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: white;
-            border: 2px solid var(--primary-color);
-            border-radius: 50%;
-            cursor: crosshair;
-            z-index: 11;
-            visibility: hidden;
-            transform: scale(0.8);
+            position: absolute; width: 12px; height: 12px;
+            background-color: white; border: 2px solid var(--primary-color);
+            border-radius: 50%; cursor: crosshair; z-index: 11;
+            visibility: hidden; transform: scale(0.8);
             transition: transform 0.2s ease, background-color 0.2s ease;
         }
         .node:hover .connector-dot, .node.selected .connector-dot { visibility: visible; }
@@ -204,28 +192,63 @@
         .dot-bottom { bottom: -8px; left: 50%; transform: translateX(-50%) scale(0.8); }
         .dot-left { left: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
         .dot-right { right: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
-
+        
         .resize-handle {
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            background-color: var(--primary-color);
-            border: 2px solid white;
-            bottom: -7px;
-            right: -7px;
-            cursor: nwse-resize;
-            z-index: 12;
-            display: none; /* Hidden by default */
+            position: absolute; width: 14px; height: 14px;
+            background-color: var(--primary-color); border: 2px solid white;
+            bottom: -7px; right: -7px; cursor: nwse-resize;
+            z-index: 12; display: none;
         }
-        .node.selected .resize-handle {
-            display: block; /* Visible only when node is selected */
+        .node.selected .resize-handle { display: block; }
+        
+        .page-tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--page-tab-bg);
+            padding: 5px 10px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+            z-index: 1002;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            box-sizing: border-box;
         }
-
+        .page-tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            background-color: #d1d5db;
+        }
+        .page-tab.active {
+            background-color: var(--page-tab-active-bg);
+            color: var(--primary-color);
+        }
+        .page-tab:hover:not(.active) {
+            background-color: #e5e7eb;
+        }
+        #addPageBtn {
+            width: 32px; height: 32px;
+            border-radius: 50%; border: none;
+            background-color: var(--primary-color); color: white;
+            font-size: 20px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
+        <button class="toolbar-btn" id="undoBtn" data-tooltip="Undo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3m0 0l7.5-7.5M3 12l7.5 7.5"></path><path d="M3 12a9 9 0 1 0 9-9"></path></svg>
+        </button>
+        <button class="toolbar-btn" id="redoBtn" data-tooltip="Redo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m0 0l-7.5-7.5M21 12l-7.5 7.5"></path><path d="M21 12a9 9 0 1 1-9-9"></path></svg>
+        </button>
+        <div class="toolbar-separator"></div>
         <button class="toolbar-btn" id="addRectangleBtn" data-tooltip="Rectangle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
         </button>
@@ -235,301 +258,520 @@
         <button class="toolbar-btn" id="addMindmapBtn" data-tooltip="Mindmap Node">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse></svg>
         </button>
+        <div class="toolbar-separator"></div>
         <div class="color-picker-container" data-tooltip="Node Color">
             <input type="color" id="nodeColorPicker" value="#ffffff">
         </div>
     </div>
 
-    <div id="board">
-        <svg id="connector-canvas"></svg>
+    <div class="main-container" id="mainContainer">
+        <div id="board">
+            <svg id="connector-canvas"></svg>
+        </div>
     </div>
+
+    <div class="page-tabs" id="pageTabs">
+        <!-- Page tabs will be dynamically inserted here -->
+        <button id="addPageBtn" data-tooltip="Add New Page">+</button>
+    </div>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const mainContainer = document.getElementById('mainContainer');
             const board = document.getElementById('board');
-            const svgCanvas = document.getElementById('connector-canvas');
             const nodeColorPicker = document.getElementById('nodeColorPicker');
+            const pageTabsContainer = document.getElementById('pageTabs');
+            const addPageBtn = document.getElementById('addPageBtn');
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+
             const buttons = {
-                addRectangle: { btn: document.getElementById('addRectangleBtn'), mode: 'add-rectangle' },
-                addDiamond:   { btn: document.getElementById('addDiamondBtn'),   mode: 'add-diamond' },
-                addMindmap:   { btn: document.getElementById('addMindmapBtn'),   mode: 'add-mindmap' },
+                addRectangle: { btn: document.getElementById('addRectangleBtn'), type: 'shape-rectangle', content: 'Process' },
+                addDiamond:   { btn: document.getElementById('addDiamondBtn'),   type: 'shape-diamond',   content: 'Decision'},
+                addMindmap:   { btn: document.getElementById('addMindmapBtn'),   type: 'mindmap-node',    content: 'Idea'   },
             };
 
-            let activeMode = null, nodeIdCounter = 0, selectedNodeId = null;
-            let nodes = {}, connections = [];
+            let appState = {
+                pages: [],
+                activePageIndex: 0,
+                nodeIdCounter: 0,
+                pageIdCounter: 0,
+                selectedNodeId: null,
+                activeMode: null,
+                view: { zoom: 1, offsetX: 0, offsetY: 0 }
+            };
 
-            // --- Mode & Selection ---
+            // ==========================================================
+            // --- HISTORY (UNDO/REDO) MANAGEMENT ---
+            // ==========================================================
+
+            function recordHistory() {
+                const page = getCurrentPage();
+                if (!page) return;
+
+                // Create a snapshot of the current state
+                const snapshot = {
+                    nodesData: Object.values(page.nodes).map(node => ({
+                        id: node.el.id, type: node.type,
+                        left: node.el.style.left, top: node.el.style.top,
+                        width: node.el.style.width, height: node.el.style.height,
+                        backgroundColor: node.el.style.backgroundColor,
+                        content: node.el.querySelector('.content').textContent
+                    })),
+                    connections: JSON.parse(JSON.stringify(page.connections)) // Deep copy
+                };
+
+                page.undoStack.push(snapshot);
+                page.redoStack = []; // Clear redo stack on new action
+                updateUndoRedoButtons();
+            }
+
+            function undo() {
+                const page = getCurrentPage();
+                if (!page || page.undoStack.length === 0) return;
+
+                const currentState = {
+                    nodesData: Object.values(page.nodes).map(node => ({
+                        id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
+                        width: node.el.style.width, height: node.el.style.height,
+                        backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
+                    })),
+                    connections: JSON.parse(JSON.stringify(page.connections))
+                };
+                page.redoStack.push(currentState);
+                
+                const previousState = page.undoStack.pop();
+                restoreState(previousState);
+                saveState();
+            }
+
+            function redo() {
+                const page = getCurrentPage();
+                if (!page || page.redoStack.length === 0) return;
+
+                const currentState = {
+                    nodesData: Object.values(page.nodes).map(node => ({
+                        id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
+                        width: node.el.style.width, height: node.el.style.height,
+                        backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
+                    })),
+                    connections: JSON.parse(JSON.stringify(page.connections))
+                };
+                page.undoStack.push(currentState);
+
+                const nextState = page.redoStack.pop();
+                restoreState(nextState);
+                saveState();
+            }
+
+            function restoreState(stateToRestore) {
+                const page = getCurrentPage();
+                page.nodesData = stateToRestore.nodesData;
+                page.connections = stateToRestore.connections;
+                renderBoard();
+                updateUndoRedoButtons();
+            }
+
+            function updateUndoRedoButtons() {
+                const page = getCurrentPage();
+                undoBtn.disabled = !page || page.undoStack.length === 0;
+                redoBtn.disabled = !page || page.redoStack.length === 0;
+            }
+
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+
+
+            // ==========================================================
+            // --- STATE MANAGEMENT & PERSISTENCE (SAVE/LOAD) ---
+            // ==========================================================
+            
+            function saveState() {
+                const stateToSave = {
+                    ...appState,
+                    pages: appState.pages.map(page => ({
+                        id: page.id,
+                        nodes: Object.values(page.nodes).map(node => ({
+                            id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
+                            width: node.el.style.width, height: node.el.style.height,
+                            backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
+                        })),
+                        connections: page.connections
+                    }))
+                };
+                localStorage.setItem('flowchartAppState', JSON.stringify(stateToSave));
+            }
+
+            function loadState() {
+                const savedState = localStorage.getItem('flowchartAppState');
+                if (savedState) {
+                    const parsedState = JSON.parse(savedState);
+                    appState = {
+                        ...parsedState,
+                        pages: parsedState.pages.map(pageData => ({
+                            id: pageData.id, nodesData: pageData.nodes, connections: pageData.connections,
+                            nodes: {}, undoStack: [], redoStack: [] // Initialize history
+                        })),
+                        selectedNodeId: null, activeMode: null,
+                    };
+                } else {
+                    addPage(false);
+                }
+                renderBoard();
+                renderPageTabs();
+                updateBoardTransform();
+                updateUndoRedoButtons();
+            }
+            
+            // ==========================================================
+            // --- PAGE MANAGEMENT ---
+            // ==========================================================
+
+            function addPage(shouldSave = true) {
+                recordHistory(); // Record state of the current page before adding a new one
+                const newPage = {
+                    id: `page-${appState.pageIdCounter++}`,
+                    nodes: {}, nodesData: [], connections: [],
+                    undoStack: [], redoStack: [] // Initialize history stacks
+                };
+                appState.pages.push(newPage);
+                switchPage(appState.pages.length - 1, shouldSave);
+            }
+
+            function switchPage(pageIndex, shouldSave = true) {
+                if (pageIndex < 0 || pageIndex >= appState.pages.length) return;
+                appState.activePageIndex = pageIndex;
+                renderBoard();
+                renderPageTabs();
+                updateUndoRedoButtons(); // Update buttons for the new page
+                if (shouldSave) saveState();
+            }
+
+            function renderPageTabs() {
+                pageTabsContainer.innerHTML = '';
+                appState.pages.forEach((page, index) => {
+                    const tab = document.createElement('div');
+                    tab.className = 'page-tab';
+                    tab.textContent = `Page ${index + 1}`;
+                    tab.dataset.index = index;
+                    if (index === appState.activePageIndex) tab.classList.add('active');
+                    tab.addEventListener('click', () => switchPage(index));
+                    pageTabsContainer.appendChild(tab);
+                });
+                pageTabsContainer.appendChild(addPageBtn);
+            }
+
+            addPageBtn.addEventListener('click', () => addPage());
+
+            // --- ALL OTHER FUNCTIONS MODIFIED TO CALL recordHistory() ---
+
+            function renderBoard() {
+                board.innerHTML = '<svg id="connector-canvas"></svg>';
+                const currentPage = getCurrentPage();
+                if (!currentPage) return;
+                currentPage.nodes = {};
+                const nodesToRender = currentPage.nodesData || [];
+                nodesToRender.forEach(nodeData => createNode(nodeData.type, { x: 0, y: 0 }, nodeData));
+                currentPage.nodesData = [];
+                drawAllConnections();
+            }
+
+            function updateBoardTransform() {
+                const { zoom, offsetX, offsetY } = appState.view;
+                board.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;
+            }
+
+            function getBoardCoordinates(e) {
+                const { zoom, offsetX, offsetY } = appState.view;
+                return { x: (e.clientX - offsetX) / zoom, y: (e.clientY - offsetY) / zoom, };
+            }
+
+            mainContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const { zoom, offsetX, offsetY } = appState.view;
+                const zoomFactor = 1.1;
+                const oldZoom = zoom; const mouseX = e.clientX; const mouseY = e.clientY;
+                let newZoom = e.deltaY > 0 ? oldZoom / zoomFactor : oldZoom * zoomFactor;
+                newZoom = Math.max(0.2, Math.min(3, newZoom));
+                const newOffsetX = mouseX - (mouseX - offsetX) * (newZoom / oldZoom);
+                const newOffsetY = mouseY - (mouseY - offsetY) * (newZoom / oldZoom);
+                appState.view = { zoom: newZoom, offsetX: newOffsetX, offsetY: newOffsetY };
+                updateBoardTransform();
+                // No history/save needed for view changes
+            }, { passive: false });
+
+            let isPanning = false, panStartX, panStartY;
+            mainContainer.addEventListener('mousedown', (e) => {
+                if (e.target === mainContainer && e.shiftKey) {
+                    isPanning = true;
+                    mainContainer.classList.add('panning');
+                    panStartX = e.clientX - appState.view.offsetX;
+                    panStartY = e.clientY - appState.view.offsetY;
+                }
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    appState.view.offsetX = e.clientX - panStartX;
+                    appState.view.offsetY = e.clientY - panStartY;
+                    updateBoardTransform();
+                }
+            });
+            window.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; mainContainer.classList.remove('panning'); } });
+
+            function getCurrentPage() { return appState.pages[appState.activePageIndex]; }
+
             const setMode = (newMode) => {
                 deselectAllNodes();
-                activeMode = (activeMode === newMode) ? null : newMode;
-                board.style.cursor = activeMode ? 'crosshair' : 'default';
-                
-                Object.values(buttons).forEach(item => {
-                    item.btn.classList.toggle('active', item.mode === activeMode);
-                });
+                appState.activeMode = (appState.activeMode === newMode) ? null : newMode;
+                mainContainer.style.cursor = appState.activeMode ? 'crosshair' : 'grab';
+                Object.values(buttons).forEach(item => item.btn.classList.toggle('active', item.type === appState.activeMode));
             };
-            
-            Object.values(buttons).forEach(item => {
-                item.btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    setMode(item.mode);
-                });
-            });
+            Object.values(buttons).forEach(item => item.btn.addEventListener('click', (e) => { e.stopPropagation(); setMode(item.type); }));
 
             const selectNode = (nodeId) => {
-                if (selectedNodeId === nodeId) return;
+                if (appState.selectedNodeId === nodeId) return;
                 deselectAllNodes();
-                selectedNodeId = nodeId;
+                appState.selectedNodeId = nodeId;
                 if (nodeId) {
-                    const nodeEl = nodes[nodeId].el;
+                    const nodeEl = getCurrentPage().nodes[nodeId].el;
                     nodeEl.classList.add('selected');
-                    
-                    // Update color picker with selected node's color
-                    const currentColor = window.getComputedStyle(nodeEl).backgroundColor;
-                    nodeColorPicker.value = rgbToHex(currentColor);
+                    nodeColorPicker.value = rgbToHex(window.getComputedStyle(nodeEl).backgroundColor);
                 }
             };
             
             const deselectAllNodes = () => {
-                if(selectedNodeId && nodes[selectedNodeId]) {
-                    nodes[selectedNodeId].el.classList.remove('selected');
+                const page = getCurrentPage();
+                if(appState.selectedNodeId && page && page.nodes[appState.selectedNodeId]) {
+                    page.nodes[appState.selectedNodeId].el.classList.remove('selected');
                 }
-                selectedNodeId = null;
+                appState.selectedNodeId = null;
             };
-
-            board.addEventListener('click', (e) => {
-                if (activeMode) {
-                    createNode(activeMode, e.clientX, e.clientY);
+            
+            mainContainer.addEventListener('click', (e) => {
+                if (appState.activeMode) {
+                    recordHistory();
+                    const coords = getBoardCoordinates(e);
+                    const selectedButton = Object.values(buttons).find(b => b.type === appState.activeMode);
+                    createNode(selectedButton.type, coords, { content: selectedButton.content });
                     setMode(null);
-                } else if (e.target.id === 'board') {
+                    saveState();
+                } else if (e.target === mainContainer) {
                     deselectAllNodes();
                 }
             });
             
-            // --- Deletion ---
             window.addEventListener('keydown', (e) => {
-                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNodeId) {
-                    if (document.activeElement.contentEditable !== 'true') {
-                       e.preventDefault();
-                       deleteNode(selectedNodeId);
-                    }
+                if ((e.key === 'Delete' || e.key === 'Backspace') && appState.selectedNodeId && document.activeElement.contentEditable !== 'true') {
+                   e.preventDefault();
+                   recordHistory();
+                   deleteNode(appState.selectedNodeId);
+                   saveState();
                 }
             });
 
             function deleteNode(nodeId) {
-                connections = connections.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
-                nodes[nodeId].el.remove();
-                delete nodes[nodeId];
-                selectedNodeId = null;
+                const page = getCurrentPage();
+                page.connections = page.connections.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
+                page.nodes[nodeId].el.remove();
+                delete page.nodes[nodeId];
+                appState.selectedNodeId = null;
                 drawAllConnections();
             }
 
-            // --- Node Creation ---
-            function createNode(type, x, y) {
-                const nodeId = `node-${nodeIdCounter++}`;
+            function createNode(type, coords, existingData) {
+                const page = getCurrentPage();
+                if (!page) return;
+                const nodeId = existingData.id || `node-${appState.nodeIdCounter++}`;
                 const node = document.createElement('div');
                 node.id = nodeId;
-                node.className = 'node';
-                
-                let contentText, shapeClass;
-                
-                if (type === 'add-rectangle') { shapeClass = 'shape-rectangle'; contentText = "Process"; } 
-                else if (type === 'add-diamond') { shapeClass = 'shape-diamond'; contentText = "Decision";} 
-                else if (type === 'add-mindmap') { shapeClass = 'mindmap-node'; contentText = "Idea"; }
-                
-                node.classList.add(shapeClass);
-                let rect = node.getBoundingClientRect();
-                node.style.left = `${x - rect.width / 2}px`;
-                node.style.top = `${y - rect.height / 2}px`;
-
+                node.className = 'node ' + type;
+                if (existingData.left) {
+                    Object.assign(node.style, { left: existingData.left, top: existingData.top, width: existingData.width, height: existingData.height, backgroundColor: existingData.backgroundColor });
+                } else {
+                    let rect = node.getBoundingClientRect();
+                    node.style.left = `${coords.x - (rect.width / 2) / appState.view.zoom}px`;
+                    node.style.top = `${coords.y - (rect.height / 2) / appState.view.zoom}px`;
+                }
                 const content = document.createElement('div');
                 content.className = 'content';
-                content.textContent = contentText;
+                content.textContent = existingData.content;
                 node.appendChild(content);
 
-                node.addEventListener('dblclick', () => { content.contentEditable = true; content.focus(); });
-                content.addEventListener('blur', () => { content.contentEditable = false; });
+                content.addEventListener('dblclick', () => { recordHistory(); content.contentEditable = true; content.focus(); });
+                content.addEventListener('blur', () => { content.contentEditable = false; saveState(); });
                 content.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); content.blur(); }});
                 
                 ['top', 'bottom', 'left', 'right'].forEach(pos => {
-                    const dot = document.createElement('div');
-                    dot.className = `connector-dot dot-${pos}`;
+                    const dot = document.createElement('div'); dot.className = `connector-dot dot-${pos}`;
                     dot.addEventListener('mousedown', (e) => startConnecting(e, nodeId));
                     node.appendChild(dot);
                 });
-
-                // Add resize handle
-                const resizeHandle = document.createElement('div');
-                resizeHandle.className = 'resize-handle';
+                const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle';
                 resizeHandle.addEventListener('mousedown', startResize);
                 node.appendChild(resizeHandle);
-                
                 board.appendChild(node);
-                nodes[nodeId] = { el: node };
+                page.nodes[nodeId] = { el: node, type: type };
                 node.addEventListener('mousedown', startDrag);
-                selectNode(nodeId);
+                if (!existingData.id) selectNode(nodeId);
             }
 
-            // --- Drag and Drop ---
-            let activeDraggable, offsetX, offsetY;
+            let activeDraggable, dragOffsetX, dragOffsetY, hasDragged;
             function startDrag(e) {
-                if (e.target.classList.contains('connector-dot') || 
-                    e.target.classList.contains('resize-handle') || 
-                    e.target.contentEditable === 'true') return;
+                if (e.target.matches('.connector-dot, .resize-handle') || e.target.contentEditable === 'true' || isPanning) return;
                 e.preventDefault();
+                hasDragged = false;
                 activeDraggable = e.currentTarget;
-                const rect = activeDraggable.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;
-                offsetY = e.clientY - rect.top;
                 selectNode(activeDraggable.id);
+                const boardCoords = getBoardCoordinates(e);
+                dragOffsetX = boardCoords.x - parseFloat(activeDraggable.style.left || 0);
+                dragOffsetY = boardCoords.y - parseFloat(activeDraggable.style.top || 0);
                 window.addEventListener('mousemove', drag);
                 window.addEventListener('mouseup', stopDrag);
             }
             function drag(e) {
                 if (!activeDraggable) return;
-                activeDraggable.style.left = `${e.clientX - offsetX}px`;
-                activeDraggable.style.top = `${e.clientY - offsetY}px`;
+                if(!hasDragged) {
+                    recordHistory(); // Record history only on the first move
+                    hasDragged = true;
+                }
+                const boardCoords = getBoardCoordinates(e);
+                activeDraggable.style.left = `${boardCoords.x - dragOffsetX}px`;
+                activeDraggable.style.top = `${boardCoords.y - dragOffsetY}px`;
                 updateConnectionsForNode(activeDraggable.id);
             }
             function stopDrag() {
+                if(activeDraggable && hasDragged) saveState();
+                activeDraggable = null;
                 window.removeEventListener('mousemove', drag);
                 window.removeEventListener('mouseup', stopDrag);
-                activeDraggable = null;
             }
 
-            // --- Resizing Logic ---
-            let activeResizable, initialWidth, initialHeight, initialMouseX, initialMouseY;
+            let activeResizable, initialWidth, initialHeight, initialMouseX, initialMouseY, hasResized;
             function startResize(e) {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
+                hasResized = false;
                 activeResizable = e.target.closest('.node');
-                const rect = activeResizable.getBoundingClientRect();
-                initialWidth = rect.width;
-                initialHeight = rect.height;
-                initialMouseX = e.clientX;
-                initialMouseY = e.clientY;
+                initialWidth = activeResizable.offsetWidth; initialHeight = activeResizable.offsetHeight;
+                initialMouseX = e.clientX; initialMouseY = e.clientY;
                 window.addEventListener('mousemove', resizeNode);
                 window.addEventListener('mouseup', stopResize);
             }
             function resizeNode(e) {
                 if (!activeResizable) return;
-                const dx = e.clientX - initialMouseX;
-                const dy = e.clientY - initialMouseY;
-                const newWidth = initialWidth + dx;
-                const newHeight = initialHeight + dy;
-                const minWidth = parseInt(window.getComputedStyle(activeResizable).minWidth, 10) || 50;
-                const minHeight = parseInt(window.getComputedStyle(activeResizable).minHeight, 10) || 30;
-
-                activeResizable.style.width = `${Math.max(minWidth, newWidth)}px`;
-                activeResizable.style.height = `${Math.max(minHeight, newHeight)}px`;
+                if(!hasResized) {
+                    recordHistory();
+                    hasResized = true;
+                }
+                const dx = (e.clientX - initialMouseX) / appState.view.zoom;
+                const dy = (e.clientY - initialMouseY) / appState.view.zoom;
+                const minW = parseInt(window.getComputedStyle(activeResizable).minWidth, 10) || 50;
+                const minH = parseInt(window.getComputedStyle(activeResizable).minHeight, 10) || 30;
+                activeResizable.style.width = `${Math.max(minW, initialWidth + dx)}px`;
+                activeResizable.style.height = `${Math.max(minH, initialHeight + dy)}px`;
                 updateConnectionsForNode(activeResizable.id);
             }
             function stopResize() {
+                if(activeResizable && hasResized) saveState();
+                activeResizable = null;
                 window.removeEventListener('mousemove', resizeNode);
                 window.removeEventListener('mouseup', stopResize);
-                activeResizable = null;
             }
 
-            // --- Connection Logic ---
             let isConnecting, startNodeId, tempLine;
             function startConnecting(e, nodeId) {
                 e.stopPropagation();
-                isConnecting = true;
-                startNodeId = nodeId;
+                recordHistory();
+                isConnecting = true; startNodeId = nodeId;
+                const svgCanvas = document.getElementById('connector-canvas');
                 tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                tempLine.setAttribute('stroke', 'var(--primary-color)');
-                tempLine.setAttribute('stroke-width', '2');
-                tempLine.setAttribute('stroke-dasharray', '6,4');
+                Object.assign(tempLine.style, { stroke: 'var(--primary-color)', strokeWidth: '2', strokeDasharray: '6,4' });
                 svgCanvas.appendChild(tempLine);
-                const startPos = getCenter(nodes[startNodeId].el);
-                tempLine.setAttribute('x1', startPos.x);
-                tempLine.setAttribute('y1', startPos.y);
+                const startPos = getCenter(getCurrentPage().nodes[startNodeId].el);
+                tempLine.setAttribute('x1', startPos.x); tempLine.setAttribute('y1', startPos.y);
                 window.addEventListener('mousemove', drawTempConnection);
                 window.addEventListener('mouseup', endConnecting);
             }
             function drawTempConnection(e) {
                 if (!isConnecting) return;
-                tempLine.setAttribute('x2', e.clientX);
-                tempLine.setAttribute('y2', e.clientY);
+                const boardCoords = getBoardCoordinates(e);
+                tempLine.setAttribute('x2', boardCoords.x); tempLine.setAttribute('y2', boardCoords.y);
             }
+            
             function endConnecting(e) {
                 if (isConnecting) {
                     tempLine.remove();
+                    const page = getCurrentPage();
                     const endTarget = document.elementFromPoint(e.clientX, e.clientY);
+                    let connectionMade = false;
                     if (endTarget && endTarget.classList.contains('connector-dot')) {
-                        const parentNode = endTarget.closest('.node');
-                        if (parentNode && parentNode.id !== startNodeId) {
-                            // Prevent duplicate connections
-                            const exists = connections.some(conn => (conn.from === startNodeId && conn.to === parentNode.id) || (conn.from === parentNode.id && conn.to === startNodeId));
+                        const parentNodeEl = endTarget.closest('.node');
+                        if (parentNodeEl && parentNodeEl.id !== startNodeId) {
+                            const endNodeId = parentNodeEl.id;
+                            const startNode = page.nodes[startNodeId];
+                            const endNode = page.nodes[endNodeId];
+                            const isStrict = startNode.type !== 'mindmap-node' && endNode.type !== 'mindmap-node';
+                            let exists = page.connections.some(c => isStrict ? (c.from === startNodeId && c.to === endNodeId) || (c.from === endNodeId && c.to === startNodeId) : (c.from === startNodeId && c.to === endNodeId) );
                             if (!exists) {
-                                connections.push({ from: startNodeId, to: parentNode.id });
+                                page.connections.push({ from: startNodeId, to: endNodeId });
                                 drawAllConnections();
+                                saveState();
+                                connectionMade = true;
                             }
                         }
                     }
+                    if(!connectionMade) undo(); // If no connection was made, undo the history record
                 }
                 isConnecting = false;
                 window.removeEventListener('mousemove', drawTempConnection);
                 window.removeEventListener('mouseup', endConnecting);
             }
 
-            // --- Color Picker Logic ---
-            nodeColorPicker.addEventListener('input', (e) => {
-                if (selectedNodeId) {
-                    nodes[selectedNodeId].el.style.backgroundColor = e.target.value;
+            nodeColorPicker.addEventListener('change', (e) => { // Use 'change' to record history only once
+                if (appState.selectedNodeId) {
+                    recordHistory();
+                    getCurrentPage().nodes[appState.selectedNodeId].el.style.backgroundColor = e.target.value;
+                    saveState();
                 }
             });
+
             function rgbToHex(rgb) {
-                let sep = rgb.indexOf(",") > -1 ? "," : " ";
-                rgb = rgb.substr(4).split(")")[0].split(sep);
-                let r = (+rgb[0]).toString(16),
-                    g = (+rgb[1]).toString(16),
-                    b = (+rgb[2]).toString(16);
-                if (r.length == 1) r = "0" + r;
-                if (g.length == 1) g = "0" + g;
-                if (b.length == 1) b = "0" + b;
-                return "#" + r + g + b;
+                if (!rgb || rgb.indexOf('rgb') === -1) return '#ffffff';
+                let match = rgb.match(/(\d+)/g);
+                if (!match) return '#ffffff';
+                return "#" + match.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
             }
 
-            // --- Drawing ---
             function drawAllConnections() {
+                const svgCanvas = document.getElementById('connector-canvas');
                 svgCanvas.innerHTML = '';
-                connections.forEach(conn => {
-                    const fromNode = nodes[conn.from]?.el;
-                    const toNode = nodes[conn.to]?.el;
+                const page = getCurrentPage();
+                if(!page) return;
+                page.connections.forEach(conn => {
+                    const fromNode = page.nodes[conn.from]?.el; const toNode = page.nodes[conn.to]?.el;
                     if (fromNode && toNode) {
-                        const startPos = getCenter(fromNode);
-                        const endPos = getCenter(toNode);
+                        const startPos = getCenter(fromNode), endPos = getCenter(toNode);
                         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        line.setAttribute('x1', startPos.x);
-                        line.setAttribute('y1', startPos.y);
-                        line.setAttribute('x2', endPos.x);
-                        line.setAttribute('y2', endPos.y);
-                        line.setAttribute('stroke', 'var(--connector-color)');
-                        line.setAttribute('stroke-width', '2.5');
-                        line.dataset.from = conn.from;
-                        line.dataset.to = conn.to;
+                        Object.assign(line.dataset, { from: conn.from, to: conn.to });
+                        line.setAttribute('x1', startPos.x); line.setAttribute('y1', startPos.y);
+                        line.setAttribute('x2', endPos.x); line.setAttribute('y2', endPos.y);
+                        line.setAttribute('stroke', 'var(--connector-color)'); line.setAttribute('stroke-width', '2.5');
                         svgCanvas.appendChild(line);
                     }
                 });
             }
             function updateConnectionsForNode(nodeId) {
-                const nodeCenter = getCenter(nodes[nodeId].el);
-                svgCanvas.querySelectorAll('line').forEach(line => {
-                    if (line.dataset.from === nodeId) {
-                        line.setAttribute('x1', nodeCenter.x);
-                        line.setAttribute('y1', nodeCenter.y);
-                    }
-                    if (line.dataset.to === nodeId) {
-                        line.setAttribute('x2', nodeCenter.x);
-                        line.setAttribute('y2', nodeCenter.y);
-                    }
+                const nodeCenter = getCenter(getCurrentPage().nodes[nodeId].el);
+                const svgCanvas = document.getElementById('connector-canvas');
+                svgCanvas.querySelectorAll(`line[data-from="${nodeId}"], line[data-to="${nodeId}"]`).forEach(line => {
+                    if (line.dataset.from === nodeId) { line.setAttribute('x1', nodeCenter.x); line.setAttribute('y1', nodeCenter.y); } 
+                    else { line.setAttribute('x2', nodeCenter.x); line.setAttribute('y2', nodeCenter.y); }
                 });
             }
             function getCenter(element) {
-                const rect = element.getBoundingClientRect();
-                return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                return { x: parseFloat(element.style.left) + element.offsetWidth / 2, y: parseFloat(element.style.top) + element.offsetHeight / 2 };
             }
+            loadState();
         });
     </script>
 </body>
