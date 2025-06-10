@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Light Theme (Default) */
         :root {
             --background-color: #f8f9fa;
             --primary-color: #4262ff;
@@ -19,6 +20,28 @@
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
             --page-tab-bg: #e9ecef;
             --page-tab-active-bg: #ffffff;
+            --toolbar-bg: #ffffff;
+            --toolbar-btn-hover: #f1f2f4;
+            --separator-color: #dfe1e6;
+            --mindmap-bg: #e6f7ff;
+            --mindmap-border: #91d5ff;
+        }
+
+        /* Dark Theme */
+        body.dark-theme {
+            --background-color: #212529;
+            --node-bg: #343a40;
+            --node-border: #495057;
+            --text-color: #f8f9fa;
+            --connector-color: #6c757d;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15);
+            --page-tab-bg: #1a1d20;
+            --page-tab-active-bg: #212529;
+            --toolbar-bg: #343a40;
+            --toolbar-btn-hover: #495057;
+            --separator-color: #495057;
+            --mindmap-bg: #0d3d56;
+            --mindmap-border: #1d6fa5;
         }
 
         body, html {
@@ -30,162 +53,50 @@
             overflow: hidden;
             background-color: var(--background-color);
             color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        .main-container {
-            width: 100%;
-            height: 100%;
-            overflow: hidden; /* This container will handle the viewport */
-            cursor: grab;
-        }
-        .main-container.panning {
-            cursor: grabbing;
-        }
+        .main-container { width: 100%; height: 100%; overflow: hidden; cursor: grab; }
+        .main-container.panning { cursor: grabbing; }
 
-        #board {
-            position: relative;
-            transform-origin: 0 0; /* Important for zooming */
-            width: 100%; /* The logical size */
-            height: 100%;
-        }
+        #board { position: relative; transform-origin: 0 0; width: 100%; height: 100%; }
         
-        #connector-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
+        #connector-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
         
-        .toolbar {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--node-bg);
-            padding: 8px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            z-index: 1001;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
+        .toolbar { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background-color: var(--toolbar-bg); padding: 8px; border-radius: 12px; box-shadow: var(--shadow); z-index: 1001; display: flex; gap: 8px; align-items: center; transition: background-color 0.3s ease; }
         
-        .toolbar-separator {
-            width: 1px;
-            height: 25px;
-            background-color: #dfe1e6;
-            margin: 0 4px;
-        }
+        .toolbar-separator { width: 1px; height: 25px; background-color: var(--separator-color); margin: 0 4px; transition: background-color 0.3s ease; }
 
-        .toolbar-btn {
-            position: relative;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            background-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease, opacity 0.2s;
-        }
+        .toolbar-btn { position: relative; width: 40px; height: 40px; cursor: pointer; border: none; border-radius: 8px; background-color: transparent; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s ease, opacity 0.2s; }
 
-        .toolbar-btn svg {
-            width: 24px;
-            height: 24px;
-            stroke: var(--text-color);
-            pointer-events: none;
-        }
+        .toolbar-btn svg { width: 24px; height: 24px; stroke: var(--text-color); pointer-events: none; transition: stroke 0.3s ease; }
 
-        .toolbar-btn:hover:not(:disabled) {
-            background-color: #f1f2f4;
-        }
+        .toolbar-btn:hover:not(:disabled) { background-color: var(--toolbar-btn-hover); }
         
-        .toolbar-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.4;
-        }
+        .toolbar-btn:disabled { cursor: not-allowed; opacity: 0.4; }
 
-        .toolbar-btn.active {
-            background-color: #e9eefe;
-        }
-        .toolbar-btn.active svg {
-            stroke: var(--primary-color);
-        }
-        .toolbar-btn::after, .color-picker-container::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.2s ease, visibility 0.2s ease;
-            pointer-events: none;
-        }
-        .toolbar-btn:hover::after, .color-picker-container:hover::after {
-            opacity: 1;
-            visibility: visible;
-        }
+        .toolbar-btn.active { background-color: #e9eefe; }
+        body.dark-theme .toolbar-btn.active { background-color: rgba(66, 98, 255, 0.2); }
+        .toolbar-btn.active svg { stroke: var(--primary-color); }
+        .toolbar-btn::after, .color-picker-container::after { content: attr(data-tooltip); position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease; pointer-events: none; }
+        .toolbar-btn:hover::after, .color-picker-container:hover::after { opacity: 1; visibility: visible; }
 
-        .color-picker-container {
-            position: relative;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #nodeColorPicker {
-            -webkit-appearance: none; -moz-appearance: none; appearance: none;
-            width: 28px; height: 28px; background-color: transparent;
-            border: none; cursor: pointer;
-        }
-        #nodeColorPicker::-webkit-color-swatch { border-radius: 50%; border: 2px solid #dfe1e6; }
-        #nodeColorPicker::-moz-color-swatch { border-radius: 50%; border: 2px solid #dfe1e6; }
+        .color-picker-container { position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
+        #nodeColorPicker { -webkit-appearance: none; -moz-appearance: none; appearance: none; width: 28px; height: 28px; background-color: transparent; border: none; cursor: pointer; }
+        #nodeColorPicker::-webkit-color-swatch { border-radius: 50%; border: 2px solid var(--node-border); }
+        #nodeColorPicker::-moz-color-swatch { border-radius: 50%; border: 2px solid var(--node-border); }
         
-        .node {
-            position: absolute; z-index: 10; background-color: var(--node-bg);
-            border: 1px solid var(--node-border); box-shadow: var(--shadow);
-            cursor: move; display: flex; align-items: center; justify-content: center;
-            padding: 10px; box-sizing: border-box; user-select: none;
-            transition: box-shadow 0.2s ease, border-color 0.2s ease;
-        }
+        .node { position: absolute; z-index: 10; background-color: var(--node-bg); border: 1px solid var(--node-border); box-shadow: var(--shadow); cursor: move; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; user-select: none; transition: box-shadow 0.2s ease, border-color 0.3s ease, background-color 0.3s ease; }
         .node:hover { border-color: var(--primary-color); }
-        .node.selected {
-            outline: 2px solid var(--primary-color); outline-offset: 2px;
-            border-color: var(--primary-color);
-        }
-
+        .node.selected { outline: 2px solid var(--primary-color); outline-offset: 2px; border-color: var(--primary-color); }
         .node.shape-rectangle { min-width: 150px; min-height: 80px; width: 150px; height: 80px; border-radius: 8px; }
         .node.shape-diamond { min-width: 120px; min-height: 120px; width: 120px; height: 120px; transform: rotate(45deg); border-radius: 8px; }
         .node.shape-diamond .content { transform: rotate(-45deg); }
-        .node.mindmap-node { min-width: 130px; min-height: 60px; width: 130px; height: 60px; border-radius: 30px; background-color: #e6f7ff; border-color: #91d5ff; }
+        .node.mindmap-node { min-width: 130px; min-height: 60px; width: 130px; height: 60px; border-radius: 30px; background-color: var(--mindmap-bg); border-color: var(--mindmap-border); }
 
-        .content {
-            width: 100%; height: 100%; text-align: center;
-            font-size: 15px; overflow: hidden; display: flex;
-            align-items: center; justify-content: center; outline: none;
-        }
+        .content { width: 100%; height: 100%; text-align: center; font-size: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; outline: none; }
 
-        .connector-dot {
-            position: absolute; width: 12px; height: 12px;
-            background-color: white; border: 2px solid var(--primary-color);
-            border-radius: 50%; cursor: crosshair; z-index: 11;
-            visibility: hidden; transform: scale(0.8);
-            transition: transform 0.2s ease, background-color 0.2s ease;
-        }
+        .connector-dot { position: absolute; width: 12px; height: 12px; background-color: var(--node-bg); border: 2px solid var(--primary-color); border-radius: 50%; cursor: crosshair; z-index: 11; visibility: hidden; transform: scale(0.8); transition: transform 0.2s ease, background-color 0.2s ease; }
         .node:hover .connector-dot, .node.selected .connector-dot { visibility: visible; }
         .connector-dot:hover { transform: scale(1.2); background-color: var(--primary-color); }
         .dot-top { top: -8px; left: 50%; transform: translateX(-50%) scale(0.8); }
@@ -193,60 +104,26 @@
         .dot-left { left: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
         .dot-right { right: -8px; top: 50%; transform: translateY(-50%) scale(0.8); }
         
-        .resize-handle {
-            position: absolute; width: 14px; height: 14px;
-            background-color: var(--primary-color); border: 2px solid white;
-            bottom: -7px; right: -7px; cursor: nwse-resize;
-            z-index: 12; display: none;
-        }
+        .resize-handle { position: absolute; width: 14px; height: 14px; background-color: var(--primary-color); border: 2px solid white; bottom: -7px; right: -7px; cursor: nwse-resize; z-index: 12; display: none; }
         .node.selected .resize-handle { display: block; }
         
-        .page-tabs {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: var(--page-tab-bg);
-            padding: 5px 10px;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
-            z-index: 1002;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            box-sizing: border-box;
-        }
-        .page-tab {
-            padding: 8px 16px;
-            cursor: pointer;
-            border-radius: 8px 8px 0 0;
-            font-weight: bold;
-            transition: background-color 0.2s;
-            background-color: #d1d5db;
-        }
-        .page-tab.active {
-            background-color: var(--page-tab-active-bg);
-            color: var(--primary-color);
-        }
-        .page-tab:hover:not(.active) {
-            background-color: #e5e7eb;
-        }
-        #addPageBtn {
-            width: 32px; height: 32px;
-            border-radius: 50%; border: none;
-            background-color: var(--primary-color); color: white;
-            font-size: 20px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .page-tabs { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--page-tab-bg); padding: 5px 10px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1); z-index: 1002; display: flex; align-items: center; gap: 5px; box-sizing: border-box; transition: background-color 0.3s ease; }
+        .page-tab { padding: 8px 16px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: background-color 0.2s; background-color: #d1d5db; color: #4b5563; }
+        body.dark-theme .page-tab { background-color: #495057; color: #adb5bd; }
+        .page-tab.active { background-color: var(--page-tab-active-bg); color: var(--primary-color); transition: background-color 0.3s ease; }
+        .page-tab:hover:not(.active) { background-color: #e5e7eb; }
+        body.dark-theme .page-tab:hover:not(.active) { background-color: #6c757d; }
+        #addPageBtn { width: 32px; height: 32px; border-radius: 50%; border: none; background-color: var(--primary-color); color: white; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
         <button class="toolbar-btn" id="undoBtn" data-tooltip="Undo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12H3m0 0l7.5-7.5M3 12l7.5 7.5"></path><path d="M3 12a9 9 0 1 0 9-9"></path></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4c0 1.1.9 2 2 2h4"></path><path d="M3.34 14A10 10 0 1 1 12 21a9.99 9.99 0 0 1-8.66-5"></path><path d="m3 14-3 3 3 3"></path></svg>
         </button>
         <button class="toolbar-btn" id="redoBtn" data-tooltip="Redo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18m0 0l-7.5-7.5M21 12l-7.5 7.5"></path><path d="M21 12a9 9 0 1 1-9-9"></path></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10v4c0 1.1-.9 2-2 2h-4"></path><path d="M20.66 14A10 10 0 1 0 12 3a9.99 9.99 0 0 0 8.66 5"></path><path d="m21 14 3 3-3 3"></path></svg>
         </button>
         <div class="toolbar-separator"></div>
         <button class="toolbar-btn" id="addRectangleBtn" data-tooltip="Rectangle">
@@ -262,6 +139,8 @@
         <div class="color-picker-container" data-tooltip="Node Color">
             <input type="color" id="nodeColorPicker" value="#ffffff">
         </div>
+        <button class="toolbar-btn" id="themeToggleBtn" data-tooltip="Toggle Theme">
+        </button>
     </div>
 
     <div class="main-container" id="mainContainer">
@@ -271,10 +150,8 @@
     </div>
 
     <div class="page-tabs" id="pageTabs">
-        <!-- Page tabs will be dynamically inserted here -->
         <button id="addPageBtn" data-tooltip="Add New Page">+</button>
     </div>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -285,119 +162,72 @@
             const addPageBtn = document.getElementById('addPageBtn');
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
 
             const buttons = {
                 addRectangle: { btn: document.getElementById('addRectangleBtn'), type: 'shape-rectangle', content: 'Process' },
                 addDiamond:   { btn: document.getElementById('addDiamondBtn'),   type: 'shape-diamond',   content: 'Decision'},
                 addMindmap:   { btn: document.getElementById('addMindmapBtn'),   type: 'mindmap-node',    content: 'Idea'   },
             };
+            
+            const icons = {
+                moon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`,
+                sun: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`
+            };
 
             let appState = {
-                pages: [],
-                activePageIndex: 0,
-                nodeIdCounter: 0,
-                pageIdCounter: 0,
-                selectedNodeId: null,
-                activeMode: null,
+                pages: [], activePageIndex: 0, nodeIdCounter: 0, pageIdCounter: 0,
+                selectedNodeId: null, activeMode: null,
                 view: { zoom: 1, offsetX: 0, offsetY: 0 }
             };
 
             // ==========================================================
-            // --- HISTORY (UNDO/REDO) MANAGEMENT ---
+            // --- STATE & PAGE MANAGEMENT ---
             // ==========================================================
 
-            function recordHistory() {
-                const page = getCurrentPage();
+            function capturePageData(page) {
                 if (!page) return;
-
-                // Create a snapshot of the current state
-                const snapshot = {
-                    nodesData: Object.values(page.nodes).map(node => ({
-                        id: node.el.id, type: node.type,
-                        left: node.el.style.left, top: node.el.style.top,
-                        width: node.el.style.width, height: node.el.style.height,
-                        backgroundColor: node.el.style.backgroundColor,
-                        content: node.el.querySelector('.content').textContent
-                    })),
-                    connections: JSON.parse(JSON.stringify(page.connections)) // Deep copy
-                };
-
-                page.undoStack.push(snapshot);
-                page.redoStack = []; // Clear redo stack on new action
-                updateUndoRedoButtons();
+                 // Capture live DOM state into serializable data
+                page.nodesData = Object.values(page.nodes).map(node => ({
+                    id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
+                    width: node.el.style.width, height: node.el.style.height,
+                    backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
+                }));
+                 // Capture view state for this page
+                page.view = { ...appState.view };
             }
-
-            function undo() {
-                const page = getCurrentPage();
-                if (!page || page.undoStack.length === 0) return;
-
-                const currentState = {
-                    nodesData: Object.values(page.nodes).map(node => ({
-                        id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
-                        width: node.el.style.width, height: node.el.style.height,
-                        backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
-                    })),
-                    connections: JSON.parse(JSON.stringify(page.connections))
-                };
-                page.redoStack.push(currentState);
-                
-                const previousState = page.undoStack.pop();
-                restoreState(previousState);
-                saveState();
-            }
-
-            function redo() {
-                const page = getCurrentPage();
-                if (!page || page.redoStack.length === 0) return;
-
-                const currentState = {
-                    nodesData: Object.values(page.nodes).map(node => ({
-                        id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
-                        width: node.el.style.width, height: node.el.style.height,
-                        backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
-                    })),
-                    connections: JSON.parse(JSON.stringify(page.connections))
-                };
-                page.undoStack.push(currentState);
-
-                const nextState = page.redoStack.pop();
-                restoreState(nextState);
-                saveState();
-            }
-
-            function restoreState(stateToRestore) {
-                const page = getCurrentPage();
-                page.nodesData = stateToRestore.nodesData;
-                page.connections = stateToRestore.connections;
-                renderBoard();
-                updateUndoRedoButtons();
-            }
-
-            function updateUndoRedoButtons() {
-                const page = getCurrentPage();
-                undoBtn.disabled = !page || page.undoStack.length === 0;
-                redoBtn.disabled = !page || page.redoStack.length === 0;
-            }
-
-            undoBtn.addEventListener('click', undo);
-            redoBtn.addEventListener('click', redo);
-
-
-            // ==========================================================
-            // --- STATE MANAGEMENT & PERSISTENCE (SAVE/LOAD) ---
-            // ==========================================================
             
+            function switchPage(pageIndex) {
+                if (pageIndex === appState.activePageIndex) return; // Don't switch to the same page
+
+                // *** CRITICAL FIX: Capture the state of the page we are LEAVING ***
+                capturePageData(getCurrentPage());
+
+                appState.activePageIndex = pageIndex;
+                const newPage = getCurrentPage();
+                
+                // Restore the view for the new page
+                appState.view = newPage.view || { zoom: 1, offsetX: 0, offsetY: 0 };
+
+                renderBoard(); // Renders the new page using its nodesData
+                renderPageTabs();
+                updateBoardTransform();
+                updateUndoRedoButtons();
+                saveState();
+            }
+
             function saveState() {
+                // Before saving to localStorage, make sure the current page's live data is captured
+                capturePageData(getCurrentPage());
+
                 const stateToSave = {
                     ...appState,
                     pages: appState.pages.map(page => ({
+                        // We only need to save the serializable data, not the live DOM nodes (`nodes`)
                         id: page.id,
-                        nodes: Object.values(page.nodes).map(node => ({
-                            id: node.el.id, type: node.type, left: node.el.style.left, top: node.el.style.top,
-                            width: node.el.style.width, height: node.el.style.height,
-                            backgroundColor: node.el.style.backgroundColor, content: node.el.querySelector('.content').textContent
-                        })),
-                        connections: page.connections
+                        view: page.view,
+                        nodesData: page.nodesData,
+                        connections: page.connections,
                     }))
                 };
                 localStorage.setItem('flowchartAppState', JSON.stringify(stateToSave));
@@ -410,367 +240,103 @@
                     appState = {
                         ...parsedState,
                         pages: parsedState.pages.map(pageData => ({
-                            id: pageData.id, nodesData: pageData.nodes, connections: pageData.connections,
-                            nodes: {}, undoStack: [], redoStack: [] // Initialize history
+                            ...pageData,
+                            nodes: {}, // Live DOM nodes, initially empty
+                            view: pageData.view || { zoom: 1, offsetX: 0, offsetY: 0 },
+                            undoStack: [], redoStack: []
                         })),
                         selectedNodeId: null, activeMode: null,
                     };
-                } else {
-                    addPage(false);
                 }
+                
+                if (appState.pages.length === 0) {
+                    addPage(false); // Add a first page if loading for the first time
+                }
+
+                // Set initial view from the loaded active page
+                const initialPage = getCurrentPage();
+                if (initialPage) {
+                    appState.view = initialPage.view;
+                }
+
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                setTheme(savedTheme);
                 renderBoard();
                 renderPageTabs();
                 updateBoardTransform();
                 updateUndoRedoButtons();
             }
-            
-            // ==========================================================
-            // --- PAGE MANAGEMENT ---
-            // ==========================================================
 
             function addPage(shouldSave = true) {
-                recordHistory(); // Record state of the current page before adding a new one
+                capturePageData(getCurrentPage());
                 const newPage = {
                     id: `page-${appState.pageIdCounter++}`,
                     nodes: {}, nodesData: [], connections: [],
-                    undoStack: [], redoStack: [] // Initialize history stacks
+                    view: { zoom: 1, offsetX: 0, offsetY: 0 },
+                    undoStack: [], redoStack: []
                 };
                 appState.pages.push(newPage);
-                switchPage(appState.pages.length - 1, shouldSave);
-            }
-
-            function switchPage(pageIndex, shouldSave = true) {
-                if (pageIndex < 0 || pageIndex >= appState.pages.length) return;
-                appState.activePageIndex = pageIndex;
-                renderBoard();
-                renderPageTabs();
-                updateUndoRedoButtons(); // Update buttons for the new page
+                switchPage(appState.pages.length - 1);
                 if (shouldSave) saveState();
             }
 
-            function renderPageTabs() {
-                pageTabsContainer.innerHTML = '';
-                appState.pages.forEach((page, index) => {
-                    const tab = document.createElement('div');
-                    tab.className = 'page-tab';
-                    tab.textContent = `Page ${index + 1}`;
-                    tab.dataset.index = index;
-                    if (index === appState.activePageIndex) tab.classList.add('active');
-                    tab.addEventListener('click', () => switchPage(index));
-                    pageTabsContainer.appendChild(tab);
-                });
-                pageTabsContainer.appendChild(addPageBtn);
-            }
+            // ==========================================================
+            // --- THEME MANAGEMENT ---
+            // ==========================================================
+            function setTheme(theme){if(theme==='dark'){document.body.classList.add('dark-theme');themeToggleBtn.innerHTML=icons.sun;themeToggleBtn.setAttribute('data-tooltip','Switch to Light Mode');}else{document.body.classList.remove('dark-theme');themeToggleBtn.innerHTML=icons.moon;themeToggleBtn.setAttribute('data-tooltip','Switch to Dark Mode');}localStorage.setItem('theme',theme);}
+            themeToggleBtn.addEventListener('click',()=>{const newTheme=document.body.classList.contains('dark-theme')?'light':'dark';setTheme(newTheme);});
 
-            addPageBtn.addEventListener('click', () => addPage());
-
-            // --- ALL OTHER FUNCTIONS MODIFIED TO CALL recordHistory() ---
-
-            function renderBoard() {
-                board.innerHTML = '<svg id="connector-canvas"></svg>';
-                const currentPage = getCurrentPage();
-                if (!currentPage) return;
-                currentPage.nodes = {};
-                const nodesToRender = currentPage.nodesData || [];
-                nodesToRender.forEach(nodeData => createNode(nodeData.type, { x: 0, y: 0 }, nodeData));
-                currentPage.nodesData = [];
-                drawAllConnections();
-            }
-
-            function updateBoardTransform() {
-                const { zoom, offsetX, offsetY } = appState.view;
-                board.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;
-            }
-
-            function getBoardCoordinates(e) {
-                const { zoom, offsetX, offsetY } = appState.view;
-                return { x: (e.clientX - offsetX) / zoom, y: (e.clientY - offsetY) / zoom, };
-            }
-
-            mainContainer.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const { zoom, offsetX, offsetY } = appState.view;
-                const zoomFactor = 1.1;
-                const oldZoom = zoom; const mouseX = e.clientX; const mouseY = e.clientY;
-                let newZoom = e.deltaY > 0 ? oldZoom / zoomFactor : oldZoom * zoomFactor;
-                newZoom = Math.max(0.2, Math.min(3, newZoom));
-                const newOffsetX = mouseX - (mouseX - offsetX) * (newZoom / oldZoom);
-                const newOffsetY = mouseY - (mouseY - offsetY) * (newZoom / oldZoom);
-                appState.view = { zoom: newZoom, offsetX: newOffsetX, offsetY: newOffsetY };
-                updateBoardTransform();
-                // No history/save needed for view changes
-            }, { passive: false });
-
-            let isPanning = false, panStartX, panStartY;
-            mainContainer.addEventListener('mousedown', (e) => {
-                if (e.target === mainContainer && e.shiftKey) {
-                    isPanning = true;
-                    mainContainer.classList.add('panning');
-                    panStartX = e.clientX - appState.view.offsetX;
-                    panStartY = e.clientY - appState.view.offsetY;
-                }
-            });
-            window.addEventListener('mousemove', (e) => {
-                if (isPanning) {
-                    appState.view.offsetX = e.clientX - panStartX;
-                    appState.view.offsetY = e.clientY - panStartY;
-                    updateBoardTransform();
-                }
-            });
-            window.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; mainContainer.classList.remove('panning'); } });
-
-            function getCurrentPage() { return appState.pages[appState.activePageIndex]; }
-
-            const setMode = (newMode) => {
-                deselectAllNodes();
-                appState.activeMode = (appState.activeMode === newMode) ? null : newMode;
-                mainContainer.style.cursor = appState.activeMode ? 'crosshair' : 'grab';
-                Object.values(buttons).forEach(item => item.btn.classList.toggle('active', item.type === appState.activeMode));
-            };
-            Object.values(buttons).forEach(item => item.btn.addEventListener('click', (e) => { e.stopPropagation(); setMode(item.type); }));
-
-            const selectNode = (nodeId) => {
-                if (appState.selectedNodeId === nodeId) return;
-                deselectAllNodes();
-                appState.selectedNodeId = nodeId;
-                if (nodeId) {
-                    const nodeEl = getCurrentPage().nodes[nodeId].el;
-                    nodeEl.classList.add('selected');
-                    nodeColorPicker.value = rgbToHex(window.getComputedStyle(nodeEl).backgroundColor);
-                }
-            };
+            // ==========================================================
+            // --- HISTORY (UNDO/REDO) MANAGEMENT ---
+            // ==========================================================
+            function recordHistory(){const page=getCurrentPage();if(!page)return;capturePageData(page);const snapshot={nodesData:page.nodesData,connections:JSON.parse(JSON.stringify(page.connections))};page.undoStack.push(snapshot);page.redoStack=[];updateUndoRedoButtons();}
+            function undo(){const page=getCurrentPage();if(!page||page.undoStack.length===0)return;capturePageData(page);const currentState={nodesData:page.nodesData,connections:JSON.parse(JSON.stringify(page.connections))};page.redoStack.push(currentState);restoreState(page.undoStack.pop());saveState();}
+            function redo(){const page=getCurrentPage();if(!page||page.redoStack.length===0)return;capturePageData(page);const currentState={nodesData:page.nodesData,connections:JSON.parse(JSON.stringify(page.connections))};page.undoStack.push(currentState);restoreState(page.redoStack.pop());saveState();}
+            function restoreState(stateToRestore){const page=getCurrentPage();page.nodesData=stateToRestore.nodesData;page.connections=stateToRestore.connections;renderBoard();updateUndoRedoButtons();}
+            function updateUndoRedoButtons(){const page=getCurrentPage();undoBtn.disabled=!page||page.undoStack.length===0;redoBtn.disabled=!page||page.redoStack.length===0;}
+            undoBtn.addEventListener('click',undo);redoBtn.addEventListener('click',redo);
             
-            const deselectAllNodes = () => {
-                const page = getCurrentPage();
-                if(appState.selectedNodeId && page && page.nodes[appState.selectedNodeId]) {
-                    page.nodes[appState.selectedNodeId].el.classList.remove('selected');
-                }
-                appState.selectedNodeId = null;
-            };
+            // ==========================================================
+            // --- ALL OTHER FUNCTIONS ---
+            // ==========================================================
+            function renderPageTabs(){pageTabsContainer.innerHTML='';appState.pages.forEach((page,index)=>{const tab=document.createElement('div');tab.className='page-tab';tab.textContent=`Page ${index+1}`;tab.dataset.index=index;if(index===appState.activePageIndex)tab.classList.add('active');tab.addEventListener('click',()=>switchPage(index));pageTabsContainer.appendChild(tab);});pageTabsContainer.appendChild(addPageBtn);}
+            addPageBtn.addEventListener('click',()=>addPage());
+            function renderBoard(){board.innerHTML='<svg id="connector-canvas"></svg>';const currentPage=getCurrentPage();if(!currentPage)return;currentPage.nodes={};const nodesToRender=currentPage.nodesData||[];nodesToRender.forEach(nodeData=>createNode(nodeData.type,{x:0,y:0},nodeData));drawAllConnections();}
+            function updateBoardTransform(){const{zoom,offsetX,offsetY}=appState.view;board.style.transform=`translate(${offsetX}px, ${offsetY}px) scale(${zoom})`;}
+            function getBoardCoordinates(e){const{zoom,offsetX,offsetY}=appState.view;return{x:(e.clientX-offsetX)/zoom,y:(e.clientY-offsetY)/zoom,};}
+            mainContainer.addEventListener('wheel',(e)=>{e.preventDefault();const{zoom,offsetX,offsetY}=appState.view;const zoomFactor=1.1;const oldZoom=zoom;const mouseX=e.clientX;const mouseY=e.clientY;let newZoom=e.deltaY>0?oldZoom/zoomFactor:oldZoom*zoomFactor;newZoom=Math.max(0.2,Math.min(3,newZoom));const newOffsetX=mouseX-(mouseX-offsetX)*(newZoom/oldZoom);const newOffsetY=mouseY-(mouseY-offsetY)*(newZoom/oldZoom);appState.view={zoom:newZoom,offsetX:newOffsetX,offsetY:newOffsetY};updateBoardTransform();},{passive:false});
+            let isPanning=!1,panStartX,panStartY;mainContainer.addEventListener('mousedown',(e)=>{if(e.target===mainContainer&&e.shiftKey){isPanning=!0;mainContainer.classList.add('panning');panStartX=e.clientX-appState.view.offsetX;panStartY=e.clientY-appState.view.offsetY;}});window.addEventListener('mousemove',(e)=>{if(isPanning){appState.view.offsetX=e.clientX-panStartX;appState.view.offsetY=e.clientY-panStartY;updateBoardTransform();}});window.addEventListener('mouseup',()=>{if(isPanning){isPanning=!1;mainContainer.classList.remove('panning');}});
+            function getCurrentPage(){return appState.pages[appState.activePageIndex];}
+            const setMode=newMode=>{deselectAllNodes();appState.activeMode=appState.activeMode===newMode?null:newMode;mainContainer.style.cursor=appState.activeMode?'crosshair':'grab';Object.values(buttons).forEach(item=>item.btn.classList.toggle('active',item.type===appState.activeMode));};
+            Object.values(buttons).forEach(item=>item.btn.addEventListener('click',e=>{e.stopPropagation();setMode(item.type);}));
+            const selectNode=nodeId=>{if(appState.selectedNodeId===nodeId)return;deselectAllNodes();appState.selectedNodeId=nodeId;if(nodeId){const nodeEl=getCurrentPage().nodes[nodeId].el;nodeEl.classList.add('selected');nodeColorPicker.value=rgbToHex(window.getComputedStyle(nodeEl).backgroundColor);}};
+            const deselectAllNodes=()=>{const page=getCurrentPage();if(appState.selectedNodeId&&page&&page.nodes[appState.selectedNodeId]){page.nodes[appState.selectedNodeId].el.classList.remove('selected');}
+            appState.selectedNodeId=null;};
+            mainContainer.addEventListener('click',e=>{if(appState.activeMode){recordHistory();const coords=getBoardCoordinates(e);const selectedButton=Object.values(buttons).find(b=>b.type===appState.activeMode);createNode(selectedButton.type,coords,{content:selectedButton.content});setMode(null);saveState();}else if(e.target===mainContainer){deselectAllNodes();}});
+            window.addEventListener('keydown',e=>{if((e.key==='Delete'||e.key==='Backspace')&&appState.selectedNodeId&&document.activeElement.contentEditable!=='true'){e.preventDefault();recordHistory();deleteNode(appState.selectedNodeId);saveState();}});
+            function deleteNode(nodeId){const page=getCurrentPage();page.connections=page.connections.filter(conn=>conn.from!==nodeId&&conn.to!==nodeId);page.nodes[nodeId].el.remove();delete page.nodes[nodeId];appState.selectedNodeId=null;drawAllConnections();}
+            function createNode(type,coords,existingData){const page=getCurrentPage();if(!page)return;const nodeId=existingData.id||`node-${appState.nodeIdCounter++}`;const node=document.createElement('div');node.id=nodeId;node.className='node '+type;if(existingData.left){Object.assign(node.style,{left:existingData.left,top:existingData.top,width:existingData.width,height:existingData.height,backgroundColor:existingData.backgroundColor});}else{let rect=node.getBoundingClientRect();node.style.left=`${coords.x-(rect.width/2)/appState.view.zoom}px`;node.style.top=`${coords.y-(rect.height/2)/appState.view.zoom}px`;}
+            const content=document.createElement('div');content.className='content';content.textContent=existingData.content;node.appendChild(content);content.addEventListener('dblclick',()=>{recordHistory();content.contentEditable=!0;content.focus();});content.addEventListener('blur',()=>{content.contentEditable=!1;saveState();});content.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();content.blur();}});['top','bottom','left','right'].forEach(pos=>{const dot=document.createElement('div');dot.className=`connector-dot dot-${pos}`;dot.addEventListener('mousedown',e=>startConnecting(e,nodeId));node.appendChild(dot);});const resizeHandle=document.createElement('div');resizeHandle.className='resize-handle';resizeHandle.addEventListener('mousedown',startResize);node.appendChild(resizeHandle);board.appendChild(node);page.nodes[nodeId]={el:node,type:type};node.addEventListener('mousedown',startDrag);if(!existingData.id)selectNode(nodeId);}
+            let activeDraggable,dragOffsetX,dragOffsetY,hasDragged;function startDrag(e){if(e.target.matches('.connector-dot, .resize-handle')||e.target.contentEditable==='true'||isPanning)return;e.preventDefault();hasDragged=!1;activeDraggable=e.currentTarget;selectNode(activeDraggable.id);const boardCoords=getBoardCoordinates(e);dragOffsetX=boardCoords.x-parseFloat(activeDraggable.style.left||0);dragOffsetY=boardCoords.y-parseFloat(activeDraggable.style.top||0);window.addEventListener('mousemove',drag);window.addEventListener('mouseup',stopDrag);}
+            function drag(e){if(!activeDraggable)return;if(!hasDragged){recordHistory();hasDragged=!0;}
+            const boardCoords=getBoardCoordinates(e);activeDraggable.style.left=`${boardCoords.x-dragOffsetX}px`;activeDraggable.style.top=`${boardCoords.y-dragOffsetY}px`;updateConnectionsForNode(activeDraggable.id);}
+            function stopDrag(){if(activeDraggable&&hasDragged)saveState();activeDraggable=null;window.removeEventListener('mousemove',drag);window.removeEventListener('mouseup',stopDrag);}
+            let activeResizable,initialWidth,initialHeight,initialMouseX,initialMouseY,hasResized;function startResize(e){e.preventDefault();e.stopPropagation();hasResized=!1;activeResizable=e.target.closest('.node');initialWidth=activeResizable.offsetWidth;initialHeight=activeResizable.offsetHeight;initialMouseX=e.clientX;initialMouseY=e.clientY;window.addEventListener('mousemove',resizeNode);window.addEventListener('mouseup',stopResize);}
+            function resizeNode(e){if(!activeResizable)return;if(!hasResized){recordHistory();hasResized=!0;}
+            const dx=(e.clientX-initialMouseX)/appState.view.zoom;const dy=(e.clientY-initialMouseY)/appState.view.zoom;const minW=parseInt(window.getComputedStyle(activeResizable).minWidth,10)||50;const minH=parseInt(window.getComputedStyle(activeResizable).minHeight,10)||30;activeResizable.style.width=`${Math.max(minW,initialWidth+dx)}px`;activeResizable.style.height=`${Math.max(minH,initialHeight+dy)}px`;updateConnectionsForNode(activeResizable.id);}
+            function stopResize(){if(activeResizable&&hasResized)saveState();activeResizable=null;window.removeEventListener('mousemove',resizeNode);window.removeEventListener('mouseup',stopResize);}
+            let isConnecting,startNodeId,tempLine;function startConnecting(e,nodeId){e.stopPropagation();recordHistory();isConnecting=!0;startNodeId=nodeId;const svgCanvas=document.getElementById('connector-canvas');tempLine=document.createElementNS('http://www.w3.org/2000/svg','line');Object.assign(tempLine.style,{stroke:'var(--primary-color)',strokeWidth:'2',strokeDasharray:'6,4'});svgCanvas.appendChild(tempLine);const startPos=getCenter(getCurrentPage().nodes[startNodeId].el);tempLine.setAttribute('x1',startPos.x);tempLine.setAttribute('y1',startPos.y);window.addEventListener('mousemove',drawTempConnection);window.addEventListener('mouseup',endConnecting);}
+            function drawTempConnection(e){if(!isConnecting)return;const boardCoords=getBoardCoordinates(e);tempLine.setAttribute('x2',boardCoords.x);tempLine.setAttribute('y2',boardCoords.y);}
+            function endConnecting(e){if(isConnecting){tempLine.remove();const page=getCurrentPage();const endTarget=document.elementFromPoint(e.clientX,e.clientY);let connectionMade=!1;if(endTarget&&endTarget.classList.contains('connector-dot')){const parentNodeEl=endTarget.closest('.node');if(parentNodeEl&&parentNodeEl.id!==startNodeId){const endNodeId=parentNodeEl.id;const startNode=page.nodes[startNodeId];const endNode=page.nodes[endNodeId];const isStrict=startNode.type!=='mindmap-node'&&endNode.type!=='mindmap-node';let exists=page.connections.some(c=>isStrict?(c.from===startNodeId&&c.to===endNodeId)||(c.from===endNodeId&&c.to===startNodeId):c.from===startNodeId&&c.to===endNodeId);if(!exists){page.connections.push({from:startNodeId,to:endNodeId});drawAllConnections();saveState();connectionMade=!0;}}}
+            if(!connectionMade)undo();}
+            isConnecting=!1;window.removeEventListener('mousemove',drawTempConnection);window.removeEventListener('mouseup',endConnecting);}
+            nodeColorPicker.addEventListener('change',e=>{if(appState.selectedNodeId){recordHistory();getCurrentPage().nodes[appState.selectedNodeId].el.style.backgroundColor=e.target.value;saveState();}});
+            function rgbToHex(rgb){if(!rgb||rgb.indexOf('rgb')===-1)return'#ffffff';let match=rgb.match(/(\d+)/g);if(!match)return'#ffffff';return"#"+match.slice(0,3).map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');}
+            function drawAllConnections(){const svgCanvas=document.getElementById('connector-canvas');svgCanvas.innerHTML='';const page=getCurrentPage();if(!page)return;page.connections.forEach(conn=>{const fromNode=page.nodes[conn.from]?.el;const toNode=page.nodes[conn.to]?.el;if(fromNode&&toNode){const startPos=getCenter(fromNode),endPos=getCenter(toNode);const line=document.createElementNS('http://www.w3.org/2000/svg','line');Object.assign(line.dataset,{from:conn.from,to:conn.to});line.setAttribute('x1',startPos.x);line.setAttribute('y1',startPos.y);line.setAttribute('x2',endPos.x);line.setAttribute('y2',endPos.y);line.setAttribute('stroke','var(--connector-color)');line.setAttribute('stroke-width','2.5');svgCanvas.appendChild(line);}});}
+            function updateConnectionsForNode(nodeId){const nodeCenter=getCenter(getCurrentPage().nodes[nodeId].el);const svgCanvas=document.getElementById('connector-canvas');svgCanvas.querySelectorAll(`line[data-from="${nodeId}"], line[data-to="${nodeId}"]`).forEach(line=>{if(line.dataset.from===nodeId){line.setAttribute('x1',nodeCenter.x);line.setAttribute('y1',nodeCenter.y);}else{line.setAttribute('x2',nodeCenter.x);line.setAttribute('y2',nodeCenter.y);}});}
+            function getCenter(element){return{x:parseFloat(element.style.left)+element.offsetWidth/2,y:parseFloat(element.style.top)+element.offsetHeight/2};}
             
-            mainContainer.addEventListener('click', (e) => {
-                if (appState.activeMode) {
-                    recordHistory();
-                    const coords = getBoardCoordinates(e);
-                    const selectedButton = Object.values(buttons).find(b => b.type === appState.activeMode);
-                    createNode(selectedButton.type, coords, { content: selectedButton.content });
-                    setMode(null);
-                    saveState();
-                } else if (e.target === mainContainer) {
-                    deselectAllNodes();
-                }
-            });
-            
-            window.addEventListener('keydown', (e) => {
-                if ((e.key === 'Delete' || e.key === 'Backspace') && appState.selectedNodeId && document.activeElement.contentEditable !== 'true') {
-                   e.preventDefault();
-                   recordHistory();
-                   deleteNode(appState.selectedNodeId);
-                   saveState();
-                }
-            });
-
-            function deleteNode(nodeId) {
-                const page = getCurrentPage();
-                page.connections = page.connections.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
-                page.nodes[nodeId].el.remove();
-                delete page.nodes[nodeId];
-                appState.selectedNodeId = null;
-                drawAllConnections();
-            }
-
-            function createNode(type, coords, existingData) {
-                const page = getCurrentPage();
-                if (!page) return;
-                const nodeId = existingData.id || `node-${appState.nodeIdCounter++}`;
-                const node = document.createElement('div');
-                node.id = nodeId;
-                node.className = 'node ' + type;
-                if (existingData.left) {
-                    Object.assign(node.style, { left: existingData.left, top: existingData.top, width: existingData.width, height: existingData.height, backgroundColor: existingData.backgroundColor });
-                } else {
-                    let rect = node.getBoundingClientRect();
-                    node.style.left = `${coords.x - (rect.width / 2) / appState.view.zoom}px`;
-                    node.style.top = `${coords.y - (rect.height / 2) / appState.view.zoom}px`;
-                }
-                const content = document.createElement('div');
-                content.className = 'content';
-                content.textContent = existingData.content;
-                node.appendChild(content);
-
-                content.addEventListener('dblclick', () => { recordHistory(); content.contentEditable = true; content.focus(); });
-                content.addEventListener('blur', () => { content.contentEditable = false; saveState(); });
-                content.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); content.blur(); }});
-                
-                ['top', 'bottom', 'left', 'right'].forEach(pos => {
-                    const dot = document.createElement('div'); dot.className = `connector-dot dot-${pos}`;
-                    dot.addEventListener('mousedown', (e) => startConnecting(e, nodeId));
-                    node.appendChild(dot);
-                });
-                const resizeHandle = document.createElement('div'); resizeHandle.className = 'resize-handle';
-                resizeHandle.addEventListener('mousedown', startResize);
-                node.appendChild(resizeHandle);
-                board.appendChild(node);
-                page.nodes[nodeId] = { el: node, type: type };
-                node.addEventListener('mousedown', startDrag);
-                if (!existingData.id) selectNode(nodeId);
-            }
-
-            let activeDraggable, dragOffsetX, dragOffsetY, hasDragged;
-            function startDrag(e) {
-                if (e.target.matches('.connector-dot, .resize-handle') || e.target.contentEditable === 'true' || isPanning) return;
-                e.preventDefault();
-                hasDragged = false;
-                activeDraggable = e.currentTarget;
-                selectNode(activeDraggable.id);
-                const boardCoords = getBoardCoordinates(e);
-                dragOffsetX = boardCoords.x - parseFloat(activeDraggable.style.left || 0);
-                dragOffsetY = boardCoords.y - parseFloat(activeDraggable.style.top || 0);
-                window.addEventListener('mousemove', drag);
-                window.addEventListener('mouseup', stopDrag);
-            }
-            function drag(e) {
-                if (!activeDraggable) return;
-                if(!hasDragged) {
-                    recordHistory(); // Record history only on the first move
-                    hasDragged = true;
-                }
-                const boardCoords = getBoardCoordinates(e);
-                activeDraggable.style.left = `${boardCoords.x - dragOffsetX}px`;
-                activeDraggable.style.top = `${boardCoords.y - dragOffsetY}px`;
-                updateConnectionsForNode(activeDraggable.id);
-            }
-            function stopDrag() {
-                if(activeDraggable && hasDragged) saveState();
-                activeDraggable = null;
-                window.removeEventListener('mousemove', drag);
-                window.removeEventListener('mouseup', stopDrag);
-            }
-
-            let activeResizable, initialWidth, initialHeight, initialMouseX, initialMouseY, hasResized;
-            function startResize(e) {
-                e.preventDefault(); e.stopPropagation();
-                hasResized = false;
-                activeResizable = e.target.closest('.node');
-                initialWidth = activeResizable.offsetWidth; initialHeight = activeResizable.offsetHeight;
-                initialMouseX = e.clientX; initialMouseY = e.clientY;
-                window.addEventListener('mousemove', resizeNode);
-                window.addEventListener('mouseup', stopResize);
-            }
-            function resizeNode(e) {
-                if (!activeResizable) return;
-                if(!hasResized) {
-                    recordHistory();
-                    hasResized = true;
-                }
-                const dx = (e.clientX - initialMouseX) / appState.view.zoom;
-                const dy = (e.clientY - initialMouseY) / appState.view.zoom;
-                const minW = parseInt(window.getComputedStyle(activeResizable).minWidth, 10) || 50;
-                const minH = parseInt(window.getComputedStyle(activeResizable).minHeight, 10) || 30;
-                activeResizable.style.width = `${Math.max(minW, initialWidth + dx)}px`;
-                activeResizable.style.height = `${Math.max(minH, initialHeight + dy)}px`;
-                updateConnectionsForNode(activeResizable.id);
-            }
-            function stopResize() {
-                if(activeResizable && hasResized) saveState();
-                activeResizable = null;
-                window.removeEventListener('mousemove', resizeNode);
-                window.removeEventListener('mouseup', stopResize);
-            }
-
-            let isConnecting, startNodeId, tempLine;
-            function startConnecting(e, nodeId) {
-                e.stopPropagation();
-                recordHistory();
-                isConnecting = true; startNodeId = nodeId;
-                const svgCanvas = document.getElementById('connector-canvas');
-                tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                Object.assign(tempLine.style, { stroke: 'var(--primary-color)', strokeWidth: '2', strokeDasharray: '6,4' });
-                svgCanvas.appendChild(tempLine);
-                const startPos = getCenter(getCurrentPage().nodes[startNodeId].el);
-                tempLine.setAttribute('x1', startPos.x); tempLine.setAttribute('y1', startPos.y);
-                window.addEventListener('mousemove', drawTempConnection);
-                window.addEventListener('mouseup', endConnecting);
-            }
-            function drawTempConnection(e) {
-                if (!isConnecting) return;
-                const boardCoords = getBoardCoordinates(e);
-                tempLine.setAttribute('x2', boardCoords.x); tempLine.setAttribute('y2', boardCoords.y);
-            }
-            
-            function endConnecting(e) {
-                if (isConnecting) {
-                    tempLine.remove();
-                    const page = getCurrentPage();
-                    const endTarget = document.elementFromPoint(e.clientX, e.clientY);
-                    let connectionMade = false;
-                    if (endTarget && endTarget.classList.contains('connector-dot')) {
-                        const parentNodeEl = endTarget.closest('.node');
-                        if (parentNodeEl && parentNodeEl.id !== startNodeId) {
-                            const endNodeId = parentNodeEl.id;
-                            const startNode = page.nodes[startNodeId];
-                            const endNode = page.nodes[endNodeId];
-                            const isStrict = startNode.type !== 'mindmap-node' && endNode.type !== 'mindmap-node';
-                            let exists = page.connections.some(c => isStrict ? (c.from === startNodeId && c.to === endNodeId) || (c.from === endNodeId && c.to === startNodeId) : (c.from === startNodeId && c.to === endNodeId) );
-                            if (!exists) {
-                                page.connections.push({ from: startNodeId, to: endNodeId });
-                                drawAllConnections();
-                                saveState();
-                                connectionMade = true;
-                            }
-                        }
-                    }
-                    if(!connectionMade) undo(); // If no connection was made, undo the history record
-                }
-                isConnecting = false;
-                window.removeEventListener('mousemove', drawTempConnection);
-                window.removeEventListener('mouseup', endConnecting);
-            }
-
-            nodeColorPicker.addEventListener('change', (e) => { // Use 'change' to record history only once
-                if (appState.selectedNodeId) {
-                    recordHistory();
-                    getCurrentPage().nodes[appState.selectedNodeId].el.style.backgroundColor = e.target.value;
-                    saveState();
-                }
-            });
-
-            function rgbToHex(rgb) {
-                if (!rgb || rgb.indexOf('rgb') === -1) return '#ffffff';
-                let match = rgb.match(/(\d+)/g);
-                if (!match) return '#ffffff';
-                return "#" + match.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
-            }
-
-            function drawAllConnections() {
-                const svgCanvas = document.getElementById('connector-canvas');
-                svgCanvas.innerHTML = '';
-                const page = getCurrentPage();
-                if(!page) return;
-                page.connections.forEach(conn => {
-                    const fromNode = page.nodes[conn.from]?.el; const toNode = page.nodes[conn.to]?.el;
-                    if (fromNode && toNode) {
-                        const startPos = getCenter(fromNode), endPos = getCenter(toNode);
-                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                        Object.assign(line.dataset, { from: conn.from, to: conn.to });
-                        line.setAttribute('x1', startPos.x); line.setAttribute('y1', startPos.y);
-                        line.setAttribute('x2', endPos.x); line.setAttribute('y2', endPos.y);
-                        line.setAttribute('stroke', 'var(--connector-color)'); line.setAttribute('stroke-width', '2.5');
-                        svgCanvas.appendChild(line);
-                    }
-                });
-            }
-            function updateConnectionsForNode(nodeId) {
-                const nodeCenter = getCenter(getCurrentPage().nodes[nodeId].el);
-                const svgCanvas = document.getElementById('connector-canvas');
-                svgCanvas.querySelectorAll(`line[data-from="${nodeId}"], line[data-to="${nodeId}"]`).forEach(line => {
-                    if (line.dataset.from === nodeId) { line.setAttribute('x1', nodeCenter.x); line.setAttribute('y1', nodeCenter.y); } 
-                    else { line.setAttribute('x2', nodeCenter.x); line.setAttribute('y2', nodeCenter.y); }
-                });
-            }
-            function getCenter(element) {
-                return { x: parseFloat(element.style.left) + element.offsetWidth / 2, y: parseFloat(element.style.top) + element.offsetHeight / 2 };
-            }
+            // --- INITIALIZE THE APP ---
             loadState();
         });
     </script>
